@@ -409,12 +409,8 @@ function installDefaultConfigs() {
 	log_info "Moving over default configurations..."
 	sudo cp $mudpi_dir/installer/configs/supervisor_mudpi.conf /etc/supervisor/conf.d/mudpi.conf || log_error "Unable to install supervisor job"
 
-	if [ ! -f "$webroot_dir/includes/config.php" ]; then
-		sudo cp "$webroot_dir/configs/config.php" "$webroot_dir/includes/config.php"
-	fi
-
 	if [ "$ui_option" == 1 ]; then
-		sudo cp $webroot_dir/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf || log_error "Unable to install ui nginx config"
+		sudo cp $webroot_dir/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf || log_error "Unable to install ui nginx config"
 		sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
 
 		if [ -f /etc/nginx/sites-available/assistant_redirect.conf ]; then
