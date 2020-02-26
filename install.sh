@@ -162,15 +162,16 @@ function makeDirectories()
 function installDependencies() 
 {
 	log_info "Installing required packages"
+	sudo apt-get update
+	sudo apt-get install software-properties-common
 	if [ "$rasp_version" -eq "9" ]; then
 		sudo sed -i 's/stretch/buster/g' /etc/apt/sources.list
 	fi
-	sudo apt-get install software-properties-common
 	sudo add-apt-repository ppa:ondrej/php
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
-	sudo apt-get install $php_package python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl git tmux curl wget zip unzip htop -y --fix-missing || log_error "Unable to install dependencies"
+	sudo apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing || log_error "Unable to install dependencies"
 	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
 	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
 	if [ -f "/usr/local/bin/composer" ]; then
@@ -305,6 +306,7 @@ function downloadMudpiCoreFiles()
 	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
 	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
+	pip3 install -r $mudpi_dir/core/requirements.txt
 }
 
 # Fetches latest files from github
