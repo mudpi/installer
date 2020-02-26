@@ -171,7 +171,10 @@ function installDependencies()
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
+	# retry check if dependencies fail
 	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing; then
+		# try a fix and install one more time
+		log_warning "Failed to install dependencies. Trying to fix-missing and reinstall..."
 		sudo apt-get install --fix-missing 
 		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing || log_error "Unable to install dependencies"
 	else
@@ -182,13 +185,12 @@ function installDependencies()
 	if [ -f "/usr/local/bin/composer" ]; then
 		log_info "Composer already installed!"
 	else
-		wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
+		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
 	fi
 	rm composer-setup.php
 }
 
 function askNginxInstall() {
-	log_info "Setting up web server support"
 	if [ -d /etc/nginx ]; then
 		log_info "Detected Nginx already installed!"
 		nginx_option=1
@@ -199,16 +201,14 @@ function askNginxInstall() {
 			if [ "$answer" != "${answer#[Nn]}" ]; then
 				echo -e
 			else
-				installNginx
 				nginx_option=1
 			fi
-		elif [ "$nginx_option" == 1 ]; then
-			installNginx
 		fi
 	fi
 }
 
 function installNginx() {
+	log_info "Setting up web server support"
 	sudo service apache2 stop
 	sudo update-rc.d -f apache2 remove
 	sudo apt-get remove apache2
@@ -223,11 +223,8 @@ function askAssistantInstall() {
 		if [ "$answer" != "${answer#[Nn]}" ]; then
 			echo -e
 		else
-			downloadAssistantFiles
 			assistant_option=1
 		fi
-	elif [ "$assistant_option" == 1 ]; then
-		downloadAssistantFiles
 	fi
 }
 
@@ -249,22 +246,19 @@ function askUIInstall() {
 
 # ask to install access point
 function askAPModeInstall() {
-	log_info "Setting up Access Point support"
 	echo -n "Install hostapd and make Access Point configuration? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
 		if [ "$answer" != "${answer#[Nn]}" ]; then
 			echo -e
 		else
-			InstallAPMode
 			ap_mode_option=1
 		fi
-	elif [ "$ap_mode_option" == 1 ]; then
-		InstallAPMode
 	fi
 }
 
-function InstallAPMode() {
+function installAPMode() {
+	log_info "Setting up Access Point support"
 	sudo apt-get install hostapd dnsmasq -y || log_error "Unable to install hostapd dnsmasq"
 	sudo systemctl stop hostapd
 	sudo systemctl stop dnsmasq
@@ -598,16 +592,28 @@ function displaySuccess() {
 function installMudpi() {
 	displayWelcome
 	installationSetup
+	askNginxInstall
+	askUIInstall
+	askAssistantInstall
+	askAPModeInstall
 	installDependencies
 	EnableSSH
 	makeDirectories
 	backupConfigs
 	downloadInstallerFiles
 	downloadMudpiCoreFiles
-	askNginxInstall
-	askUIInstall
-	askAssistantInstall
-	askAPModeInstall
+	if [ "$nginx_option" == 1 ]; then
+		installNginx
+	fi
+	if [ "$ui_option" == 1 ]; then
+		downloadUIFiles
+	fi
+	if [ "$assistant_option" == 1 ]; then
+		downloadAssistantFiles
+	fi
+	if [ "$ap_mode_option" == 1 ]; then
+		installAPMode
+	fi
 	installDefaultConfigs
 	updateHostsFile
 	updateSudoersFile
