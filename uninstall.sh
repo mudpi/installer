@@ -1,7 +1,7 @@
 #!/bin/bash
 mudpi_dir="/etc/mudpi"
 mudpi_user="www-data"
-version=`sed 's/\..*//' /etc/debian_version`
+rasp_version=`sed 's/\..*//' /etc/debian_version`
 webroot_dir="/var/www/html" 
 user=$(whoami)
 
