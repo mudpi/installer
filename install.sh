@@ -203,6 +203,8 @@ function askNginxInstall() {
 			else
 				nginx_option=1
 			fi
+		else
+			nginx_option=1
 		fi
 	fi
 }
@@ -225,6 +227,8 @@ function askAssistantInstall() {
 		else
 			assistant_option=1
 		fi
+	else
+		assistant_option=1
 	fi
 }
 
@@ -236,11 +240,10 @@ function askUIInstall() {
 		if [ "$answer" != "${answer#[Nn]}" ]; then
 			echo -e
 		else
-			downloadUIFiles
 			ui_option=1
 		fi
-	elif [ "$ui_option" == 1 ]; then
-		downloadUIFiles
+	else
+		ui_option=1
 	fi
 }
 
@@ -254,6 +257,8 @@ function askAPModeInstall() {
 		else
 			ap_mode_option=1
 		fi
+	else
+		ap_mode_option=1
 	fi
 }
 
