@@ -160,6 +160,8 @@ function makeDirectories()
 function installDependencies() 
 {
 	log_info "Installing required packages"
+	sudo apt-get install software-properties-common
+	sudo add-apt-repository ppa:ondrej/php
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
