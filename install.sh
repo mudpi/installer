@@ -5,9 +5,9 @@
 # license: MIT
 
 repo="mudpi/mudpi-core"
-repo_installer="mudpi/mudpi-installer"
-repo_assistant="mudpi/mudpi-assistant"
-repo_ui="mudpi/mudpi-ui"
+repo_installer="mudpi/installer"
+repo_assistant="mudpi/assistant"
+repo_ui="mudpi/ui"
 branch="master"
 mudpi_dir="/etc/mudpi"
 webroot_dir="/var/www/html"

@@ -1,4 +1,4 @@
-<img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="200px">
+<img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="100px">
 
 # MudPi Installer
 > A bash script to walk you through installing MudPi on a RaspberryPi
@@ -6,7 +6,7 @@
 ## Installation
 Install MudPi from your RaspberryPi terminal with a Wifi connection:
 ```
-curl -sL https://install.mudpi.app | bash
+curl -sL https://raw.githubusercontent.com/mudpi/installer/master/install.sh | bash
 ```
 
 ## Documentation
