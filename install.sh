@@ -98,10 +98,10 @@ function log_warning() {
 version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
-	php_package="php7.3 php7.3-cgi php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml "
+	php_package="php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml "
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
-	php_package="php7.3 php7.3-cgi php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml " # might be version 7.0 CHECK ME
+	php_package="php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml " # might be version 7.0 CHECK ME
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
@@ -161,9 +161,9 @@ function installDependencies()
 {
 	log_info "Installing required packages"
 	if [ "$rasp_version" -eq "9" ]; then
-		sudo apt -y install lsb-release apt-transport-https ca-certificates || log_error "Problem installing source list for php"
+		sudo apt-get install -y apt-transport-https lsb-release ca-certificates wget || log_error "Problem installing source list for php"
 		sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg || log_error "Problem installing source list for php"
-		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php7.3.list || log_error "Problem installing source list for php"
+		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list || log_error "Problem installing source list for php"
 	fi
 	sudo apt-get install software-properties-common
 	sudo add-apt-repository ppa:ondrej/php
