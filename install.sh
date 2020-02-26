@@ -148,12 +148,12 @@ function makeDirectories()
 	else
 		log_warning "$mudpi_dir already directory exists."
 	fi
-	sudo mkdir -p $(mudpi_dir)/backups
-	sudo mkdir -p $(mudpi_dir)/networking/defaults
-	sudo mkdir -p $(mudpi_dir)/tmp
-	sudo mkdir -p $(mudpi_dir)/logs
-	sudo mkdir -p $(mudpi_dir)/scripts
-	sudo mkdir -p $(mudpi_dir)/installer
+	sudo mkdir -p ${mudpi_dir}/backups
+	sudo mkdir -p ${mudpi_dir}/networking/defaults
+	sudo mkdir -p ${mudpi_dir}/tmp
+	sudo mkdir -p ${mudpi_dir}/logs
+	sudo mkdir -p ${mudpi_dir}/scripts
+	sudo mkdir -p ${mudpi_dir}/installer
 
 	sudo chown -R ${mudpi_user}:${mudpi_user} $mudpi_dir || log_error "Unable to change file ownership for '$mudpi_dir'"
 }
@@ -410,6 +410,9 @@ function installDefaultConfigs() {
 	sudo cp $mudpi_dir/installer/configs/supervisor_mudpi.conf /etc/supervisor/conf.d/mudpi.conf || log_error "Unable to install supervisor job"
 
 	if [ "$ui_option" == 1 ]; then
+		sudo rm /etc/nginx/sites-enabled/default || log_error "Problem removing default nginx configs"
+		sudo rm /etc/nginx/sites-available/default || log_error "Problem removing default nginx configs"
+
 		sudo cp $webroot_dir/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf || log_error "Unable to install ui nginx config"
 		sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
 
