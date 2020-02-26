@@ -98,20 +98,13 @@ function log_warning() {
 version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
-	php_package="php7.3-cgi"
+	php_package="php7.3-cli"
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
-	php_package="php7.2-cgi" # might be version 7.0 CHECK ME
+	php_package="php7.3-cli" # might be version 7.0 CHECK ME
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
-fi
-
-phpcgiconf=""
-if [ "$php_package" = "php7.3-cgi" ]; then
-	phpcgiconf="/etc/php/7.3/cgi/php.ini"
-elif [ "$php_package" = "php7.2-cgi" ]; then
-	phpcgiconf="/etc/php/7.2/cgi/php.ini"
 fi
 
 function installationSetup() 
@@ -170,7 +163,7 @@ function installDependencies()
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
-	sudo apt-get install $php_package php-cli php-mbstring git python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl tmux curl wget zip unzip htop -y || log_error "Unable to install dependencies"
+	sudo apt-get install $php_package php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl git tmux curl wget zip unzip htop -y || log_error "Unable to install dependencies"
 	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
 	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
 	if [ -f "/usr/local/bin/composer" ]; then

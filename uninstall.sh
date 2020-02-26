@@ -18,13 +18,6 @@ elif [ "$rasp_version" -lt "9" ]; then
 	exit 1
 fi
 
-phpcgiconf=""
-if [ "$php_package" = "php7.3-cgi" ]; then
-	phpcgiconf="/etc/php/7.3/cgi/php.ini"
-elif [ "$php_package" = "php7.2-cgi" ]; then
-	phpcgiconf="/etc/php/7.2/cgi/php.ini"
-fi
-
 function log_info() {
 	echo -e "\033[1;32mMudPi Uninstall: $*\033[m"
 }
