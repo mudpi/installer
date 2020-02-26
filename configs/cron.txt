@@ -1,0 +1,2 @@
+*/10 * * * * sudo /usr/bin/auto_hotspot >> /etc/mudpi/logs/auto_hotspot.log 2>&1
+@reboot sleep 60 && /usr/bin/auto_hotspot >> /etc/mudpi/logs/auto_hotspot.log 2>&1

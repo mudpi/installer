@@ -1,0 +1,607 @@
+#!/bin/bash
+	
+# This bash script is used to install Mudpi
+# author: Eric Davisson @theDavisson <hi@ericdavisson.com>
+# license: MIT
+
+repo="mudpi/mudpi-core"
+repo_installer="mudpi/mudpi-installer"
+repo_assistant="mudpi/mudpi-assistant"
+repo_ui="mudpi/mudpi-ui"
+branch="master"
+mudpi_dir="/etc/mudpi"
+webroot_dir="/var/www/html"
+mudpi_user="www-data"
+maroon='\033[0;35m'
+green='\033[1;32m'
+user=$(whoami)
+# Grab some version details
+VERSION=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")' )
+rasp_version=`sed 's/\..*//' /etc/debian_version`
+
+# Manual options to bypass prompts
+force_yes=0 #Option to force yes through any prompts
+nginx_option=0
+assistant_option=0
+ui_option=0
+ap_mode_option=0
+
+# usage notes
+usage=$(cat << EOF
+Usage: install.sh [OPTION]\n
+-y, --yes, --force-yes\n\Forces "yes" answer to all prompts
+-b, --branch <name>\n\tOverrides the default git branch (master)
+-h, --help\n\tOutputs usage notes and exits
+-v, --version\n\tOutputs release info and exits\n
+EOF
+)
+
+# command-line options
+while :; do
+	case $1 in
+		-y|--yes|--force-yes)
+		force_yes=1
+		apt_option="-y"
+		;;
+		-b|--branch)
+		branch="$2"
+		shift
+		;;
+		-h|--help)
+		printf "$usage"
+		exit 1
+		;;
+		-v|--version)
+		printf "MudPi v${VERSION} - Configurable automated smart garden for RaspberryPi\n"
+		exit 1
+	;;
+		-*|--*)
+		echo "Unknown option: $1"
+		printf "$usage"
+		exit 1
+		;;
+		*)
+		break
+		;;
+	esac
+	shift
+done
+
+function displayWelcome() {
+	echo -e "${green}\n"
+	echo -e ' __  __           _ _____ _ '
+	echo -e '|  \/  |         | |  __ (_)'
+	echo -e '| \  / |_   _  __| | |__) | '
+	echo -e '| |\/| | | | |/ _` |  ___/ | '
+	echo -e '| |  | | |_| | (_| | |   | | '
+	echo -e '|_|  |_|\__,_|\__,_|_|   |_| '
+	echo -e "Version: $VERSION"
+	echo -e '_________________________________________________'
+	echo -e "${maroon}The next few steps will guide you through the installation process."
+	echo -e ''
+}
+
+function log_info() {
+	echo -e "\033[1;32mMudPi Install: $*\033[m"
+}
+
+function log_error() {
+	echo -e "\033[1;37;41mMudPi Install Error: $*\033[m"
+	exit 1
+}
+
+function log_warning() {
+	echo -e "\033[1;33mWarning: $*\033[m"
+}
+
+# Determine Raspbian version
+version_msg="Unknown Raspbian Version"
+if [ "$rasp_version" -eq "10" ]; then
+	version_msg="Raspbian 10.0 (Buster)"
+	php_package="php7.3-cgi"
+elif [ "$rasp_version" -eq "9" ]; then
+	version_msg="Raspbian 9.0 (Stretch)" 
+	php_package="php7.2-cgi" # might be version 7.0 CHECK ME
+elif [ "$rasp_version" -lt "9" ]; then
+	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
+	exit 1
+fi
+
+phpcgiconf=""
+if [ "$php_package" = "php7.3-cgi" ]; then
+	phpcgiconf="/etc/php/7.3/cgi/php.ini"
+elif [ "$php_package" = "php7.2-cgi" ]; then
+	phpcgiconf="/etc/php/7.2/cgi/php.ini"
+fi
+
+function installationSetup() 
+{
+	log_info "Confirm Settings"
+	echo "Detected ${version_msg}" 
+	echo "Install directory: ${mudpi_dir}"
+	echo -n "Install to web server root directory: ${webroot_dir}? [Y/n]: "
+	if [ "$force_yes" == 0 ]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Nn]}" ]; then
+			read -e -p < /dev/tty "Enter alternate  directory: " -i "/var/www/html" webroot_dir
+		fi
+	else
+		echo -e
+	fi
+	echo "Install to directory: ${webroot_dir}"
+
+	echo -n "Complete installation with these settings? [Y/n]: "
+	if [ "$force_yes" == 0 ]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Nn]}" ]; then
+			echo "Installation aborted."
+			exit 0
+		fi
+	else
+		echo -e
+	fi
+
+}
+
+function makeDirectories() 
+{
+	#Make Mudpi folders and move configs
+	echo "Creating directories..."
+	if [ ! -d "$mudpi_dir" ]; then
+		echo "$mudpi_dir directory doesn't exist. Creating..."
+		sudo mkdir -p $mudpi_dir
+	else
+		log_warning "$mudpi_dir already directory exists."
+	fi
+	sudo mkdir -p $(mudpi_dir)/backups
+	sudo mkdir -p $(mudpi_dir)/networking/defaults
+	sudo mkdir -p $(mudpi_dir)/tmp
+	sudo mkdir -p $(mudpi_dir)/logs
+	sudo mkdir -p $(mudpi_dir)/scripts
+	sudo mkdir -p $(mudpi_dir)/installer
+
+	sudo chown -R ${mudpi_user}:${mudpi_user} $mudpi_dir || log_error "Unable to change file ownership for '$mudpi_dir'"
+}
+
+# Runs a system software update to make sure we're using all fresh packages
+function installDependencies() 
+{
+	log_info "Installing required packages"
+	sudo apt-get update
+	sudo apt-get dist-upgrade
+	sudo apt-get upgrade
+	sudo apt-get install $php_package php-cli php-mbstring git python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl tmux curl wget zip unzip htop -y || log_error "Unable to install dependencies"
+	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
+	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
+	if [ -f "/usr/local/bin/composer" ]; then
+		log_info "Composer already installed!"
+	else
+		wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
+	fi
+	rm composer-setup.php
+}
+
+function askNginxInstall() {
+	log_info "Setting up web server support"
+	if [ -d /etc/nginx ]; then
+		log_info "Detected Nginx already installed!"
+		nginx_option=1
+	else
+		echo -n "Install nginx for web server? [Y/n]: "
+		if [ "$force_yes" == 0 ]; then
+			read answer < /dev/tty
+			if [ "$answer" != "${answer#[Nn]}" ]; then
+				echo -e
+			else
+				installNginx
+				nginx_option=1
+			fi
+		elif [ "$nginx_option" == 1 ]; then
+			installNginx
+		fi
+	fi
+}
+
+function installNginx() {
+	sudo apt-get install nginx mariadb-server mariadb-client -y
+}
+
+function askAssistantInstall() {
+	log_info "MudPi Assistant - web interface for Wifi configurations"
+	echo -n "Install mudpi-assistant and add config to nginx? [Y/n]: "
+	if [ "$force_yes" == 0 ]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Nn]}" ]; then
+			echo -e
+		else
+			downloadAssistantFiles
+			assistant_option=1
+		fi
+	elif [ "$assistant_option" == 1 ]; then
+		downloadAssistantFiles
+	fi
+}
+
+function askUIInstall() {
+	log_info "MudPi UI is a lightweight web interface to monitor MudPi"
+	echo -n "Install mudpi-ui and enable dashboard? [Y/n]: "
+	if [[ "$force_yes" == 0 ]]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Nn]}" ]; then
+			echo -e
+		else
+			downloadUIFiles
+			ui_option=1
+		fi
+	elif [ "$ui_option" == 1 ]; then
+		downloadUIFiles
+	fi
+}
+
+# ask to install access point
+function askAPModeInstall() {
+	log_info "Setting up Access Point support"
+	echo -n "Install hostapd and make Access Point configuration? [Y/n]: "
+	if [ "$force_yes" == 0 ]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Nn]}" ]; then
+			echo -e
+		else
+			InstallAPMode
+			ap_mode_option=1
+		fi
+	elif [ "$ap_mode_option" == 1 ]; then
+		InstallAPMode
+	fi
+}
+
+function InstallAPMode() {
+	sudo apt-get install hostapd dnsmasq -y || log_error "Unable to install hostapd dnsmasq"
+	sudo systemctl stop hostapd
+	sudo systemctl stop dnsmasq
+	sudo systemctl unmask hostapd
+	sudo systemctl disable hostapd
+	sudo systemctl disable dnsmasq
+}
+
+function EnableSSH() 
+{
+	log_info "Enabling SSH for remote access"
+	sudo systemctl enable ssh
+	sudo systemctl start ssh
+}
+
+function downloadInstallerFiles() 
+{
+	if [ ! -d "$mudpi_dir/installer" ]; then
+		sudo mkdir -p $mudpi_dir/installer || log_error "Unable to create new mudpi root directory"
+	fi
+
+	if [ -d "$mudpi_dir/installer" ]; then
+		sudo mv $mudpi_dir/installer "$mudpi_dir/installer.`date +%F-%R`" || log_error "Unable to remove old webroot directory"
+	fi
+
+	log_info "Cloning latest installer files from github"
+	git clone --depth 1 https://github.com/${repo_installer} /tmp/mudpi_installer || log_error "Unable to download installer files from github"
+	sudo mv /tmp/mudpi_installer $mudpi_dir/installer || log_error "Unable to move Mudpi installer to $mudpi_dir/installer"
+	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir/installer'"
+}
+
+# Fetches latest files from github
+function downloadMudpiCoreFiles() 
+{
+	if [ ! -d "$webroot_dir" ]; then
+		sudo mkdir -p $webroot_dir || log_error "Unable to create new webroot directory"
+	fi
+
+	if [ -d "$mudpi_dir/core" ]; then
+		sudo mv $mudpi_dir/core "$mudpi_dir/core.`date +%F-%R`" || log_error "Unable to remove old webroot directory"
+	fi
+
+	log_info "Cloning latest core files from github"
+	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
+	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
+	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
+}
+
+# Fetches latest files from github
+function downloadAssistantFiles() 
+{
+	if [ ! -d "$webroot_dir" ]; then
+		sudo mkdir -p $webroot_dir || log_error "Unable to create new webroot directory"
+	fi
+
+	if [ -d "$webroot_dir/mudpi_assistant" ]; then
+		sudo mv ${webroot_dir}/mudpi_assistant "${webroot_dir}/mudpi_assistant.`date +%F-%R`" || log_error "Unable to remove old assistant webroot directory"
+	fi
+
+	log_info "Cloning latest assistant files from github"
+	git clone --depth 1 https://github.com/${repo_assistant} /tmp/mudpi_assistant || log_error "Unable to download assistant files from github"
+	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
+	composer install -d=${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
+	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
+}
+
+
+# Fetches latest files from github
+function downloadUIFiles() 
+{
+	if [ ! -d "$webroot_dir" ]; then
+		sudo mkdir -p $webroot_dir || log_error "Unable to create new webroot directory"
+	fi
+
+	if [ -d "$webroot_dir/mudpi" ]; then
+		sudo mv ${webroot_dir}/mudpi "${webroot_dir}/mudpi.`date +%F-%R`" || log_error "Unable to remove old ui webroot directory"
+	fi
+
+	log_info "Cloning latest ui files from github"
+	git clone --depth 1 https://github.com/${repo_ui} /tmp/mudpi || log_error "Unable to download ui files from github"
+	sudo mv /tmp/mudpi $webroot_dir || log_error "Unable to move Mudpi UI to web root"
+	composer install -d=${webroot_dir}/mudpi || log_error "Unable to run composer install"
+	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi" || log_error "Unable to set permissions in '$webroot_dir'"
+}
+
+# Check for existing /etc/network/interfaces and /etc/hostapd/hostapd.conf files
+function backupConfigs() 
+{
+	echo "Making backups of current configs..."
+	if [ -f /etc/network/interfaces ]; then
+		sudo cp /etc/network/interfaces "$mudpi_dir/backups/interfaces.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/interfaces.`date +%F-%R`" "$mudpi_dir/backups/interfaces"
+	fi
+
+	if [ -f /etc/hostapd/hostapd.conf ]; then
+		sudo cp /etc/hostapd/hostapd.conf "$mudpi_dir/backups/hostapd.conf.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/hostapd.conf.`date +%F-%R`" "$mudpi_dir/backups/hostapd.conf"
+	fi
+
+	if [ -f /etc/dnsmasq.conf ]; then
+		sudo cp /etc/dnsmasq.conf "$mudpi_dir/backups/dnsmasq.conf.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/dnsmasq.conf.`date +%F-%R`" "$mudpi_dir/backups/dnsmasq.conf"
+	fi
+
+	if [ -f /etc/dhcpcd.conf ]; then
+		sudo cp /etc/dhcpcd.conf "$mudpi_dir/backups/dhcpcd.conf.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/dhcpcd.conf.`date +%F-%R`" "$mudpi_dir/backups/dhcpcd.conf"
+		cat /etc/dhcpcd.conf | sudo tee -a ${mudpi_dir}/networking/defaults
+	fi
+
+	if [ -f /etc/rc.local ]; then
+		sudo cp /etc/rc.local "$mudpi_dir/backups/rc.local.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/rc.local.`date +%F-%R`" "$mudpi_dir/backups/rc.local"
+	fi
+
+	if [ -f /etc/mudpi/core/mudpi.config ]; then
+		sudo cp $mudpi_dir/mudpi.config "$mudpi_dir/backups/mudpi.config.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/mudpi.config.`date +%F-%R`" "$mudpi_dir/backups/mudpi.config"
+	fi
+
+	if [ -f /etc/sudoers ]; then
+		sudo cp /etc/sudoers "$mudpi_dir/backups/sudoers.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/sudoers.`date +%F-%R`" "$mudpi_dir/backups/sudoers"
+	fi
+	
+	if [ -d /etc/nginx ]; then
+		sudo tar -czf "$mudpi_dir/backups/nginx.`date +%F-%R`.tar.gz" "/etc/nginx/sites-available"
+	fi
+
+	if [ -f /etc/hosts ]; then
+		sudo cp /etc/hosts "$mudpi_dir/backups/hosts.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/hosts.`date +%F-%R`" "$mudpi_dir/backups/hosts"
+	fi
+
+	sudo crontab -u "$user" -l > "$mudpi_dir/backups/cron.`date +%F-%R`"
+	sudo ln -sf "$mudpi_dir/backups/cron.`date +%F-%R`" "$mudpi_dir/backups/cron"
+	sudo crontab -l > "$mudpi_dir/backups/cron_root.`date +%F-%R`"
+	sudo ln -sf "$mudpi_dir/backups/cron_root.`date +%F-%R`" "$mudpi_dir/backups/cron_root"
+}
+
+function installDefaultConfigs() {
+	log_info "Moving over default configurations..."
+	sudo cp $mudpi_dir/installer/configs/supervisor_mudpi.conf /etc/supervisor/conf.d/mudpi.conf || log_error "Unable to install supervisor job"
+
+	if [ ! -f "$webroot_dir/includes/config.php" ]; then
+		sudo cp "$webroot_dir/configs/config.php" "$webroot_dir/includes/config.php"
+	fi
+
+	if [ "$ui_option" == 1 ]; then
+		sudo cp $webroot_dir/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf || log_error "Unable to install ui nginx config"
+		sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
+
+		if [ -f /etc/nginx/sites-available/assistant_redirect.conf ]; then
+			log_info "Detected assistant redirect config. Removing assistant_redirect.conf"
+			sudo rm /etc/nginx/sites-enabled/assistant_redirect.conf
+			sudo rm /etc/nginx/sites-available/assistant_redirect.conf
+		fi
+	fi
+
+	if [ "$assistant_option" == 1 ]; then
+		sudo cp $webroot_dir/mudpi_assistant/configs/mudpi_assistant.conf /etc/nginx/sites-available/mudpi_assistant.conf || log_error "Unable to install mudpi_assistant nginx config"
+		sudo ln -sf /etc/nginx/sites-available/mudpi_assistant.conf /etc/nginx/sites-enabled
+		if [ "$ui_option" == 0 ]; then
+			sudo cp $mudpi_dir/installer/configs/assistant_redirect.conf /etc/nginx/sites-available/assistant_redirect.conf || log_error "Unable to install assistant_redirect nginx config"
+			sudo ln -sf /etc/nginx/sites-available/assistant_redirect.conf /etc/nginx/sites-enabled
+		fi
+	fi
+
+	if [ "$nginx_option" == 1 ]; then
+		echo "Installing MudPi Web Dashboard..."
+		echo "Visit 'mudpi.home' or the assigned pi IP"
+		sudo service nginx restart || log_error "Unable to restart nginx (check the configs)"
+	fi
+
+	sudo systemctl daemon-reload
+
+
+
+	if [ "$ap_mode_option" == 1 ]; then
+		if [ -f /etc/default/hostapd ]; then
+			sudo mv /etc/default/hostapd /tmp/default_hostapd.old || log_error "Unable to remove old /etc/default/hostapd file"
+		fi
+		sudo cp $mudpi_dir/installer/configs/default_hostapd /etc/default/hostapd || log_error "Unable to move hostapd defaults file"
+		sudo cp $mudpi_dir/installer/configs/hostapd.conf /etc/hostapd/hostapd.conf || log_error "Unable to move hostapd configuration file"
+		sudo cp $mudpi_dir/installer/configs/dnsmasq.conf /etc/dnsmasq.conf || log_error "Unable to move dnsmasq configuration file"
+		sudo cp $mudpi_dir/installer/configs/dhcpcd.conf /etc/dhcpcd.conf || log_error "Unable to move dhcpcd configuration file"
+		sudo cat $mudpi_dir/installer/configs/hosts >> /etc/hosts || log_error "Unable to append hosts"
+
+
+		sudo cp $mudpi_dir/installer/scripts/stop_hotspot.sh /usr/bin/stop_hotspot || log_error "Unable to install stop_hotspot script file"
+		sudo chmod +x /usr/bin/stop_hotspot || log_error "Unable to assign permissions for /usr/bin/stop_hostspot"
+		sudo cp $mudpi_dir/installer/scripts/start_hotspot.sh /usr/bin/start_hotspot || log_error "Unable to install start_hotspot script file"
+		sudo chmod +x /usr/bin/start_hotspot || log_error "Unable to assign permissions for /usr/bin/start_hostspot"
+
+		# enable hotspot helper service
+		echo "Auto AP Mode will auto start the Access Point when Wifi is not connected."
+		echo -n "Enable Auto AP Mode control service (Recommended)? [Y/n]: "
+		if [ "$force_yes" == 0 ]; then
+			read answer < /dev/tty
+			if [ "$answer" != "${answer#[Nn]}" ]; then
+				echo -e
+			else
+				enableAutoAPMode
+			fi
+		else
+			echo -e
+			enableAutoAPMode
+		fi
+	fi
+}
+
+
+function updateHostsFile() {
+
+	log_info "Checking hosts file...."
+
+	# Set commands array
+	newhosts=(
+		'192.168.2.1 mudpi mudpi.local mudpi.home #MUDPI-apmode'
+		'10.45.12.1	clients3.google.com #MUDPI-captiveportal'
+		'10.45.12.1	clients.l.google.com #MUDPI-captiveportal'
+		'10.45.12.1	connectivitycheck.android.com #MUDPI-captiveportal'
+		'10.45.12.1	connectivitycheck.gstatic.com #MUDPI-captiveportal'
+		'10.45.12.1	play.googleapis.com #MUDPI-captiveportal'
+	)
+
+	# Check if sudoers needs patching
+	if [ $(sudo grep -c "#MUDPI" /etc/sudoers) -ne ${#newhosts[@]} ]
+	then
+		# Sudoers file has incorrect number of commands. Wiping them out.
+		log_info "Cleaning hosts file..."
+		sudo sed -i "/#MUDPI/d" /etc/hosts
+		log_info "Updating hosts file..."
+		# patch /etc/sudoers file
+		for hostline in "${newhosts[@]}"
+		do
+			sudo echo "$hostline" >> /etc/hosts
+		done
+	else
+		log_info "Hosts file already updated!"
+	fi
+}
+
+function updateSudoersFile() {
+
+	log_info "Checking sudoers file...."
+
+	commands=(
+		'/sbin/shutdown -h now'
+		'/sbin/reboot'
+		'/sbin/ifdown'
+		'/sbin/ifup'
+		'/sbin/dhclient'
+		'/sbin/dhclient wlan[0-9]'
+		'/bin/cat /etc/wpa_supplicant/wpa_supplicant.conf'
+		'/bin/cat /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf'
+		'/bin/cp /tmp/wpa_supplicant.tmp /etc/wpa_supplicant/wpa_supplicant.conf'
+		'/bin/cp /tmp/wpa_supplicant.tmp /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf'
+		'/bin/cp /tmp/wpa_supplicant.tmp /etc/mudpi/tmp/wpa_supplicant.conf'
+		'/bin/rm /tmp/wpa_supplicant.tmp'
+		'/sbin/wpa_cli -i wlan[0-9] scan_results'
+		'/sbin/wpa_cli -i wlan[0-9] scan'
+		'/sbin/wpa_cli -i wlan[0-9] reconfigure'
+		'/sbin/wpa_cli -i wlan[0-9] select_network'
+		'/sbin/iwconfig wlan[0-9]'
+		'/bin/cp /tmp/hostapddata /etc/hostapd/hostapd.conf'
+		'/bin/systemctl start hostapd.service'
+		'/bin/systemctl stop hostapd.service'
+		'/bin/systemctl enable hostapd.service'
+		'/bin/systemctl disable hostapd.service'
+		'/bin/systemctl start dnsmasq.service'
+		'/bin/systemctl enable dnsmasq.service'
+		'/bin/systemctl disable dnsmasq.service'
+		'/bin/systemctl stop dnsmasq.service'
+		'/bin/cp /tmp/dnsmasqdata /etc/dnsmasq.conf'
+		'/bin/cp /tmp/dhcpddata /etc/dhcpcd.conf'
+		'/bin/cp /etc/mudpi/networking/dhcpcd.conf /etc/dhcpcd.conf'
+		'/sbin/ip link set wlan[0-9] down'
+		'/sbin/ip link set wlan[0-9] up'
+		'/sbin/ip -s a f label wlan[0-9]'
+		'/sbin/iw dev wlan[0-9] scan ap-force'
+		'/sbin/iwgetid wlan[0-9] -r'
+		'/etc/mudpi/scripts'
+		'/usr/bin/auto_hotspot'
+		'/usr/bin/start_hotspot'
+		'/usr/bin/stop_hotspot'
+	)
+
+	# Check if sudoers needs patching
+	if [ $(sudo grep -c $mudpi_user /etc/sudoers) -ne ${#commands[@]} ]
+	then
+		# Sudoers file has incorrect number of commands. Wiping them out.
+		log_info "Cleaning sudoers file..."
+		sudo sed -i "/$mudpi_user/d" /etc/sudoers
+		log_info "Updating sudoers file..."
+		# patch /etc/sudoers file
+		for cmd in "${commands[@]}"
+		do
+			sudo bash -c "echo \"$mudpi_user ALL=(ALL) NOPASSWD:${cmd}\" | (EDITOR=\"tee -a\" visudo)" \ || log_error "Unable to update /etc/sudoers"
+			IFS=$'\n'
+		done
+	else
+		log_info "Sudoers file already updated!"
+	fi
+
+	# Add symlink to prevent wpa_cli commands from breaking with multiple wlan interfaces
+	log_info "Symlinked wpa_supplicant hooks for multiple wlan interfaces"
+	if [ ! -f /usr/share/dhcpcd/hooks/10-wpa_supplicant ]; then
+		sudo ln -s /usr/share/dhcpcd/hooks/10-wpa_supplicant /etc/dhcp/dhclient-enter-hooks.d/
+	fi
+
+}
+
+function enableAutoAPMode() {
+	log_info "Enabling Auto AP Mode Service"
+	echo "Disable by commenting out the lines in sudo crontab -e with a '#'"
+	sudo cp $mudpi_dir/installer/scripts/auto_hotspot.sh /usr/bin/auto_hotspot || log_error "Unable to install auto_hotspot script file"
+	sudo chmod +x /usr/bin/auto_hotspot || log_error "Unable to assign permissions for /usr/bin/auto_hostspot"
+	sudo crontab $mudpi_dir/configs/cron.txt || log_error "Failed to enable auto_hotspot cronjob"
+}
+
+function displaySuccess() {
+	log_success "MudPi installed successfully!"
+	echo "It is recommended to reboot the system now. 'sudo reboot'"
+	if [ "$force_yes" == 0 ]; then
+		sudo reboot || log_error "Unable to reboot"
+	fi
+}
+
+function installMudpi() {
+	displayWelcome
+	installationSetup
+	installDependencies
+	EnableSSH
+	makeDirectories
+	backupConfigs
+	downloadInstallerFiles
+	downloadMudpiCoreFiles
+	askNginxInstall
+	askUIInstall
+	askAssistantInstall
+	askAPModeInstall
+	installDefaultConfigs
+	updateHostsFile
+	updateSudoersFile
+	displaySuccess
+}
+
+installMudpi

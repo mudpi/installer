@@ -1,0 +1,6 @@
+192.168.2.1 mudpi mudpi.local mudpi.home #MUDPI-apmode
+10.45.12.1	clients3.google.com #MUDPI-captiveportal
+10.45.12.1	clients.l.google.com #MUDPI-captiveportal
+10.45.12.1	connectivitycheck.android.com #MUDPI-captiveportal
+10.45.12.1	connectivitycheck.gstatic.com #MUDPI-captiveportal
+10.45.12.1	play.googleapis.com #MUDPI-captiveportal

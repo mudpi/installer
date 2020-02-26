@@ -1,0 +1,28 @@
+{
+    "name": "mudpi/mudpi-installer",
+    "description": "Mudpi installer to download and configure MudPi for RaspberryPi.",
+    "version": "0.1.0",
+    "type": "library",
+    "keywords": ["mudpi", "garden", "installer", "bash", "raspberry pi"],
+    "homepage": "https://mudpi.app",
+    "time": "2020-01-01",
+    "authors": [
+        {
+            "name": "Eric Davisson",
+            "email": "eric@mudpi.app",
+            "homepage": "http://ericdavisson.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "info@mudpi.app",
+        "issues": "https://github.com/mudpi/mudpi-installer/issues",
+        "source": "https://github.com/mudpi/mudpi-installer",
+        "docs": "https://mudpi.app/docs"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
