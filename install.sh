@@ -601,8 +601,8 @@ function installMudpi() {
 	askUIInstall
 	askAssistantInstall
 	askAPModeInstall
-	installDependencies
 	EnableSSH
+	installDependencies
 	makeDirectories
 	backupConfigs
 	downloadInstallerFiles
