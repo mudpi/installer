@@ -102,7 +102,7 @@ if [ "$rasp_version" -eq "10" ]; then
 	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
-	php_version="7.2"
+	php_version="7.3"
 	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
@@ -163,17 +163,14 @@ function installDependencies()
 {
 	log_info "Installing required packages"
 	if [ "$rasp_version" -eq "9" ]; then
-		#TODO: Check on Strech! Broke my Pi Zero with Stretch Installed
-		sudo apt-get install -y apt-transport-https lsb-release ca-certificates wget || log_error "Problem installing source list for php"
-		sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg || log_error "Problem installing source list for php"
-		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list || log_error "Problem installing source list for php"
+		sudo sed -i 's/stretch/buster/g' /etc/apt/sources.list
 	fi
 	sudo apt-get install software-properties-common
 	sudo add-apt-repository ppa:ondrej/php
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
-	sudo apt-get install $php_package python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl git tmux curl wget zip unzip htop -y || log_error "Unable to install dependencies"
+	sudo apt-get install $php_package python3-pip supervisor nodejs npm libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl git tmux curl wget zip unzip htop -y --fix-missing || log_error "Unable to install dependencies"
 	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
 	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
 	if [ -f "/usr/local/bin/composer" ]; then
@@ -206,6 +203,9 @@ function askNginxInstall() {
 }
 
 function installNginx() {
+	sudo service apache2 stop
+	sudo update-rc.d -f apache2 remove
+	sudo apt-get remove apache2
 	sudo apt-get install nginx mariadb-server mariadb-client -y
 }
 
