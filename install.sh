@@ -171,7 +171,12 @@ function installDependencies()
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
-	sudo apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing || log_error "Unable to install dependencies"
+	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing; then
+		sudo apt-get install --fix-missing 
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing || log_error "Unable to install dependencies"
+	else
+		echo "Main Depepencies Successfully Installed"
+	fi
 	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
 	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
 	if [ -f "/usr/local/bin/composer" ]; then
