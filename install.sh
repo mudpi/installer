@@ -98,10 +98,12 @@ function log_warning() {
 version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
-	php_package="php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml "
+	php_version="7.3"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
-	php_package="php7.3 php7.3-cgi php7.3-cli php7.3-common php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml " # might be version 7.0 CHECK ME
+	php_version="7.2"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
@@ -161,6 +163,7 @@ function installDependencies()
 {
 	log_info "Installing required packages"
 	if [ "$rasp_version" -eq "9" ]; then
+		#TODO: Check on Strech! Broke my Pi Zero with Stretch Installed
 		sudo apt-get install -y apt-transport-https lsb-release ca-certificates wget || log_error "Problem installing source list for php"
 		sudo wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg || log_error "Problem installing source list for php"
 		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list || log_error "Problem installing source list for php"
