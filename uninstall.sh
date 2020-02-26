@@ -33,7 +33,7 @@ function confirm_uninstall() {
 	echo "Install directory: ${mudpi_dir}"
 	echo "Web directory: ${webroot_dir}"
 	echo -n "Proceed with MudPi Uninstall? [y/N]: "
-	read answer
+	read answer < /dev/tty
 	if [[ $answer != "y" ]]; then
 		echo "Uninstall aborted."
 		exit 0
@@ -44,35 +44,35 @@ function restore_backups() {
 	if [ -d "$mudpi_dir/backups" ]; then
 		if [ -f "$mudpi_dir/backups/interfaces" ]; then
 			echo -n "Restore interfaces file from backup? [y/N]: "
-			read answer
+			read answer < /dev/tty
 			if [[ $answer -eq 'y' ]]; then
 				sudo cp "$mudpi_dir/backups/interfaces" /etc/network/interfaces
 			fi
 		fi
 		if [ -f "$mudpi_dir/backups/hostapd.conf" ]; then
 			echo -n "Restore hostapd configuration file from backup? [y/N]: "
-			read answer
+			read answer < /dev/tty
 			if [[ $answer -eq 'y' ]]; then
 				sudo cp "$mudpi_dir/backups/hostapd.conf" /etc/hostapd/hostapd.conf
 			fi
 		fi
 		if [ -f "$mudpi_dir/backups/dnsmasq.conf" ]; then
 			echo -n "Restore dnsmasq configuration file from backup? [y/N]: "
-			read answer
+			read answer < /dev/tty
 			if [[ $answer -eq 'y' ]]; then
 				sudo cp "$mudpi_dir/backups/dnsmasq.conf" /etc/dnsmasq.conf
 			fi
 		fi
 		if [ -f "$mudpi_dir/backups/dhcpcd.conf" ]; then
 			echo -n "Restore dhcpcd.conf file from backup? [y/N]: "
-			read answer
+			read answer < /dev/tty
 			if [[ $answer -eq 'y' ]]; then
 				sudo cp "$mudpi_dir/backups/dhcpcd.conf" /etc/dhcpcd.conf
 			fi
 		fi
 		if [ -f "$mudpi_dir/backups/rc.local" ]; then
 			echo -n "Restore rc.local file from backup? [y/N]: "
-			read answer
+			read answer < /dev/tty
 			if [[ $answer -eq 'y' ]]; then
 				sudo cp "$mudpi_dir/backups/rc.local" /etc/rc.local
 			fi
@@ -80,14 +80,14 @@ function restore_backups() {
 	fi
 	if [ -f "$mudpi_dir/backups/cron" ]; then
 		echo -n "Restore cron file from backup? [y/N]: "
-		read answer
+		read answer < /dev/tty
 		if [[ $answer -eq 'y' ]]; then
 			sudo crontab -u "$user" "$mudpi_dir/backups/cron"
 		fi
 	fi
 	if [ -f "$mudpi_dir/backups/cron_root" ]; then
 		echo -n "Restore root cron file from backup? [y/N]: "
-		read answer
+		read answer < /dev/tty
 		if [[ $answer -eq 'y' ]]; then
 			sudo crontab "$mudpi_dir/backups/cron_root"
 		fi
@@ -141,7 +141,7 @@ function remove_mudpi_scripts() {
 function remove_dependancy_packages() {
 	log_info "Removing installed dependacy packages"
 	echo -n "Remove the following installed packages? ffmpeg $php_package hostapd dnsmasq htop [y/N]: "
-	read answer
+	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing packages."
 		sudo apt-get remove ffmpeg $php_package hostapd dnsmasq htop
@@ -154,7 +154,7 @@ function remove_dependancy_packages() {
 function remove_nginx() {
 	log_info "Removing web server"
 	echo -n "Remove nginx and disable web server? (You may have other sites!) [y/N]: "
-	read answer
+	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing nginx."
 		sudo apt-get remove nginx mariadb-server mariadb-client
@@ -167,7 +167,7 @@ function remove_nginx() {
 function remove_supervisor() {
 	log_info "Removing supervisor"
 	echo -n "Remove supervisor and disable running jobs? (You may have other jobs!) [y/N]: "
-	read answer
+	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing supervisor."
 		sudo apt-get remove supervisor
