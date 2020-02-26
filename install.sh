@@ -185,7 +185,7 @@ function installDependencies()
 	if [ -f "/usr/local/bin/composer" ]; then
 		log_info "Composer already installed!"
 	else
-		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
+		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
 	fi
 	rm composer-setup.php
 }
@@ -218,7 +218,7 @@ function installNginx() {
 }
 
 function askAssistantInstall() {
-	log_info "MudPi Assistant - web interface for Wifi configurations"
+	echo "MudPi Assistant - web interface for Wifi configurations"
 	echo -n "Install mudpi-assistant and add config to nginx? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
@@ -233,7 +233,7 @@ function askAssistantInstall() {
 }
 
 function askUIInstall() {
-	log_info "MudPi UI is a lightweight web interface to monitor MudPi"
+	echo "MudPi UI is a lightweight web interface to monitor MudPi"
 	echo -n "Install mudpi-ui and enable dashboard? [Y/n]: "
 	if [[ "$force_yes" == 0 ]]; then
 		read answer < /dev/tty
