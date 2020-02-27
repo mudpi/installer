@@ -68,6 +68,13 @@ Install composer
 sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer
 ```
 
+Install redis and change config to allow systemd to manage it
+```
+sudo apt install redis-server
+sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf
+sudo systemctl restart redis
+```
+
 Move old installer files if there are any
 ```
 sudo mv /etc/mudpi/installer "/etc/mudpi/installer.`date +%F-%R`"

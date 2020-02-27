@@ -188,6 +188,9 @@ function installDependencies()
 		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
 	fi
 	rm composer-setup.php
+	sudo apt install redis-server || log_error "Unable to install redis"
+	sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf || log_error "Unable to update /etc/redis/redis.conf"
+	sudo systemctl restart redis || log_error "Unable to restart redis"
 }
 
 function askNginxInstall() {
@@ -389,6 +392,11 @@ function backupConfigs()
 	if [ -f /etc/sudoers ]; then
 		sudo cp /etc/sudoers "$mudpi_dir/backups/sudoers.`date +%F-%R`"
 		sudo ln -sf "$mudpi_dir/backups/sudoers.`date +%F-%R`" "$mudpi_dir/backups/sudoers"
+	fi
+
+	if [ -f /etc/redis/redis.conf ]; then
+		sudo cp /etc/redis/redis.conf "$mudpi_dir/backups/redis.conf.`date +%F-%R`"
+		sudo ln -sf "$mudpi_dir/backups/redis.conf.`date +%F-%R`" "$mudpi_dir/backups/redis.conf"
 	fi
 	
 	if [ -d /etc/nginx ]; then

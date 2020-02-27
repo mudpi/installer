@@ -1,9 +1,9 @@
 <img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="100px">
 
 # MudPi Installer
-> A guided installation to download and setup MudPi on a RaspberryPi
+> A guided installation tool to download and setup MudPi on a RaspberryPi
 
-MudPi Installer is a bash script to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete (especially on older models).
+MudPi Installer is a tool to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete (especially on older models).
 
 ## Prerequisites
 MudPi will install most of the needed prerequisites however you will need a few things beforehand.
