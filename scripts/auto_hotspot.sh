@@ -22,7 +22,6 @@ wpaConfig='/etc/wpa_supplicant/wpa_supplicant.conf'
 wpassid=$(awk '/ssid="/{ print $0 }' $wpaConfig | awk -F'ssid=' '{ print $2 }' ORS=',' | sed 's/\"/''/g' | sed 's/,$//')
 interface='wlan0'
 staticip='192.168.2.1'
-currentssid=$(iwgetid $interface)
 ssids=($wpassid)
 networkscanfile='/etc/mudpi/tmp/nearbynetworklist.txt'
 apfile='/etc/mudpi/tmp/ap_mode'
