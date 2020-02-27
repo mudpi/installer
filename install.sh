@@ -452,7 +452,6 @@ function installDefaultConfigs() {
 		sudo cp $mudpi_dir/installer/configs/hostapd.conf /etc/hostapd/hostapd.conf || log_error "Unable to move hostapd configuration file"
 		sudo cp $mudpi_dir/installer/configs/dnsmasq.conf /etc/dnsmasq.conf || log_error "Unable to move dnsmasq configuration file"
 		sudo cp $mudpi_dir/installer/configs/dhcpcd.conf /etc/dhcpcd.conf || log_error "Unable to move dhcpcd configuration file"
-		sudo cat $mudpi_dir/installer/configs/hosts >> /etc/hosts || log_error "Unable to append hosts"
 
 
 		sudo cp $mudpi_dir/installer/scripts/stop_hotspot.sh /usr/bin/stop_hotspot || log_error "Unable to install stop_hotspot script file"
