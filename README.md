@@ -1,9 +1,9 @@
 <img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="100px">
 
 # MudPi Installer
-> A guided installation through setting up MudPi on a RaspberryPi
+> A guided installation to download and setup MudPi on a RaspberryPi
 
-MudPi Installer is a bash script to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). MudPi assumes most of the work so its ideal to run on a fresh Raspbain install or a pi that is not already heavily configured for other purposes. The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete(especially on older models). Backups are made of existing files and configs in the event of an error and can be restored upon uninstall.
+MudPi Installer is a bash script to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete (especially on older models).
 
 ## Prerequisites
 MudPi will install most of the needed prerequisites however you will need a few things beforehand.
@@ -26,21 +26,12 @@ curl -sL https://install.mudpi.app | bash
 ```
 
 
-## Note
-MudPi installer assumes most of the work to get the pi ready. The installer does its best to preserve old configs and only alter the needed settings to operate. Although, you still may have some conflicts if you try to install MudPi on a device already running a web server or that is already dedicated to another project.
+### Note
+MudPi Installer assumes most of the work so its ideal to run on a fresh Raspbian install or pi that is not already heavily configured for other purposes. The installer does its best to preserve old configs and only alter the needed settings to operate. Although, you still may have some conflicts if you try to install MudPi on a device already running a web server or that is already dedicated to another project.
 
 
 ## Documentation
 For full documentation visit [mudpi.app](https://mudpi.app/docs)
-
-
-## Guides
-For examples and guides on how to setup and use MudPi check out the [free guides available.](https://mudpi.app/guides)
-
-
-
-## Versioning
-Breaking.Major.Minor
 
 
 
@@ -48,6 +39,9 @@ Breaking.Major.Minor
 * Eric Davisson  - [Website](http://ericdavisson.com)
 * [Twitter.com/theDavisson](https://twitter.com/theDavisson)
 
+## Community
+* Discord  - [Join](https://discord.gg/daWg2YH)
+* [Twitter.com/MudpiApp](https://twitter.com/mudpiapp)
 
 ## Devices Tested On
 * [Raspberry Pi 2 Model B+](https://www.raspberrypi.org/products/raspberry-pi-2-model-b/)
@@ -60,6 +54,8 @@ Let me know if you are able to confirm tests on any other devices
 
 ## FAQ
 Here are a common questions about the MudPi installer and some solutions. When in doubt remove it all and reinstall.
+#### Installation Failed?
+Try rerunning the installer and if that fails again uninstall completely and try again.
 #### Where are backups stored?
 Backups are located at `/etc/mudpi/backups`. The uninstaller will restore those for you automatically.
 #### Uninstall
@@ -77,14 +73,15 @@ Auto AP Mode is a script that will trigger the access point in the event Wifi is
 First check the logs `/etc/mudpi/logs/auto_hotspot.log` and look at scan results `/etc/mudpi/tmp/nearbynetworklist.txt`.
 #### Access Point activated after reboot even with saved Wifi configs
 Sometimes when the pi first boots it may try to run programs too soon. The Auto AP Mode might not have been able to determine a wifi connection yet so it defaulted to AP Mode. It will reconnect shortly on the next scan and turn off the AP.
-#### Installation Failed?
-Try rerunning the installer and if that fails again uninstall completely and try again.
 #### Do I neeed Assistant Installed?
 If you are using this installer and already established a Wifi connection then *probably not*. It is mainly to help me build multiple units at scale internally.
 #### Problems on Debian 9 (Stretch)?
-Verified on pi zero w running Debian 9.4 (Stretch), However I reccomend upgrading to buster. It was hard to even find an acrhive of old releases on the raspberrypi main site.
+Verified on pi zero w running Debian 9.4 (stretch), however I reccomend upgrading to buster. It was hard to even find an archive of old releases on the Raspberrypi main site.
 #### Invalid Operation?
 Something got borked. Fresh raspbian install time.
+
+## Versioning
+Breaking.Major.Minor
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
