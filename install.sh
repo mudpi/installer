@@ -218,8 +218,8 @@ function installNginx() {
 }
 
 function askAssistantInstall() {
-	echo "MudPi Assistant - web interface for Wifi configurations"
-	echo -n "Install mudpi-assistant and add config to nginx? [Y/n]: "
+	echo "MudPi Assistant is a web interface for first time configurations"
+	echo -n "Install mudpi-assistant and enable web configs? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
 		if [ "$answer" != "${answer#[Nn]}" ]; then
@@ -399,9 +399,11 @@ function backupConfigs()
 		sudo ln -sf "$mudpi_dir/backups/hosts.`date +%F-%R`" "$mudpi_dir/backups/hosts"
 	fi
 
-	sudo crontab -u "$user" -l > "$mudpi_dir/backups/cron.`date +%F-%R`"
+	sudo crontab -u "$user" -l > "/tmp/cron.`date +%F-%R`"
+	sudo mv "/tmp/cron.`date +%F-%R`" "$mudpi_dir/backups/cron.`date +%F-%R`"
 	sudo ln -sf "$mudpi_dir/backups/cron.`date +%F-%R`" "$mudpi_dir/backups/cron"
-	sudo crontab -l > "$mudpi_dir/backups/cron_root.`date +%F-%R`"
+	sudo crontab -l > "/tmp/cron_root.`date +%F-%R`"
+	sudo mv "/tmp/cron_root.`date +%F-%R`" "$mudpi_dir/backups/cron.`date +%F-%R`"
 	sudo ln -sf "$mudpi_dir/backups/cron_root.`date +%F-%R`" "$mudpi_dir/backups/cron_root"
 }
 
@@ -410,8 +412,8 @@ function installDefaultConfigs() {
 	sudo cp $mudpi_dir/installer/configs/supervisor_mudpi.conf /etc/supervisor/conf.d/mudpi.conf || log_error "Unable to install supervisor job"
 
 	if [ "$ui_option" == 1 ]; then
-		sudo rm /etc/nginx/sites-enabled/default || log_error "Problem removing default nginx configs"
-		sudo rm /etc/nginx/sites-available/default || log_error "Problem removing default nginx configs"
+		sudo rm /etc/nginx/sites-enabled/default
+		sudo rm /etc/nginx/sites-available/default
 
 		sudo cp $webroot_dir/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf || log_error "Unable to install ui nginx config"
 		sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled

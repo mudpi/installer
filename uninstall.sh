@@ -140,7 +140,7 @@ function remove_mudpi_scripts() {
 
 function remove_dependancy_packages() {
 	log_info "Removing installed dependacy packages"
-	echo -n "Remove the following installed packages? ffmpeg $php_package hostapd dnsmasq htop [y/N]: "
+	echo -n "Remove the following installed packages? ffmpeg $php_package hostapd dnsmasq htop [Y/n]: "
 	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing packages."
@@ -153,7 +153,7 @@ function remove_dependancy_packages() {
 
 function remove_nginx() {
 	log_info "Removing web server"
-	echo -n "Remove nginx and disable web server? (You may have other sites!) [y/N]: "
+	echo -n "Remove nginx and disable web server? (You may have other sites!) [Y/n]: "
 	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing nginx."
@@ -166,7 +166,7 @@ function remove_nginx() {
 
 function remove_supervisor() {
 	log_info "Removing supervisor"
-	echo -n "Remove supervisor and disable running jobs? (You may have other jobs!) [y/N]: "
+	echo -n "Remove supervisor and disable running jobs? (You may have other jobs!) [Y/n]: "
 	read answer < /dev/tty
 	if [ "$answer" != 'n' ] && [ "$answer" != 'N' ]; then
 		echo "Removing supervisor."
