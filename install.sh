@@ -327,7 +327,7 @@ function downloadAssistantFiles()
 	log_info "Cloning latest assistant files from github"
 	git clone --depth 1 https://github.com/${repo_assistant} /tmp/mudpi_assistant || log_error "Unable to download assistant files from github"
 	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
-	composer install -d ${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
+	composer install -d${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
 }
 
@@ -588,7 +588,7 @@ function enableAutoAPMode() {
 }
 
 function displaySuccess() {
-	log_success "MudPi installed successfully!"
+	echo -e "${green}MudPi installed successfully!"
 	echo "It is recommended to reboot the system now. 'sudo reboot'"
 	if [ "$force_yes" == 1 ]; then
 		sudo reboot || log_error "Unable to reboot"
