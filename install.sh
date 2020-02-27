@@ -583,7 +583,7 @@ function enableAutoAPMode() {
 	echo "Disable by commenting out the lines in sudo crontab -e with a '#'"
 	sudo cp $mudpi_dir/installer/scripts/auto_hotspot.sh /usr/bin/auto_hotspot || log_error "Unable to install auto_hotspot script file"
 	sudo chmod +x /usr/bin/auto_hotspot || log_error "Unable to assign permissions for /usr/bin/auto_hostspot"
-	sudo crontab $mudpi_dir/configs/cron.txt || log_error "Failed to enable auto_hotspot cronjob"
+	sudo crontab $mudpi_dir/installer/configs/cron.txt || log_error "Failed to enable auto_hotspot cronjob"
 }
 
 function displaySuccess() {
