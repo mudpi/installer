@@ -460,7 +460,7 @@ function installDefaultConfigs() {
 		sudo chmod +x /usr/bin/start_hotspot || log_error "Unable to assign permissions for /usr/bin/start_hostspot"
 
 		# enable hotspot helper service
-		echo "Auto AP Mode will auto start the Access Point when Wifi is not connected."
+		log_info "Auto AP Mode will auto start the Access Point when Wifi is not connected."
 		echo -n "Enable Auto AP Mode control service (Recommended)? [Y/n]: "
 		if [ "$force_yes" == 0 ]; then
 			read answer < /dev/tty
@@ -589,7 +589,7 @@ function enableAutoAPMode() {
 function displaySuccess() {
 	log_success "MudPi installed successfully!"
 	echo "It is recommended to reboot the system now. 'sudo reboot'"
-	if [ "$force_yes" == 0 ]; then
+	if [ "$force_yes" == 1 ]; then
 		sudo reboot || log_error "Unable to reboot"
 	fi
 }
