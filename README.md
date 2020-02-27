@@ -34,24 +34,6 @@ MudPi Installer assumes most of the work so its ideal to run on a fresh Raspbian
 For full documentation visit [mudpi.app](https://mudpi.app/docs)
 
 
-
-## Authors
-* Eric Davisson  - [Website](http://ericdavisson.com)
-* [Twitter.com/theDavisson](https://twitter.com/theDavisson)
-
-## Community
-* Discord  - [Join](https://discord.gg/daWg2YH)
-* [Twitter.com/MudpiApp](https://twitter.com/mudpiapp)
-
-## Devices Tested On
-* [Raspberry Pi 2 Model B+](https://www.raspberrypi.org/products/raspberry-pi-2-model-b/)
-* [Raspberry Pi 3 Model B](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
-* [Raspberry Pi 3 Model B+](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
-* [Raspberry Pi Zero](https://www.raspberrypi.org/products/raspberry-pi-zero/)
-
-Let me know if you are able to confirm tests on any other devices
-
-
 ## FAQ
 Here are a common questions about the MudPi installer and some solutions. When in doubt remove it all and reinstall.
 #### Installation Failed?
@@ -79,6 +61,22 @@ If you are using this installer and already established a Wifi connection then *
 Verified on pi zero w running Debian 9.4 (stretch), however I reccomend upgrading to buster. It was hard to even find an archive of old releases on the Raspberrypi main site.
 #### Invalid Operation?
 Something got borked. Fresh raspbian install time.
+
+## Authors
+* Eric Davisson  - [Website](http://ericdavisson.com)
+* [Twitter.com/theDavisson](https://twitter.com/theDavisson)
+
+## Community
+* Discord  - [Join](https://discord.gg/daWg2YH)
+* [Twitter.com/MudpiApp](https://twitter.com/mudpiapp)
+
+## Devices Tested On
+* [Raspberry Pi 2 Model B+](https://www.raspberrypi.org/products/raspberry-pi-2-model-b/)
+* [Raspberry Pi 3 Model B](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
+* [Raspberry Pi 3 Model B+](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
+* [Raspberry Pi Zero](https://www.raspberrypi.org/products/raspberry-pi-zero/)
+
+Let me know if you are able to confirm tests on any other devices
 
 ## Versioning
 Breaking.Major.Minor
