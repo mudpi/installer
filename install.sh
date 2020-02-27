@@ -327,7 +327,7 @@ function downloadAssistantFiles()
 	log_info "Cloning latest assistant files from github"
 	git clone --depth 1 https://github.com/${repo_assistant} /tmp/mudpi_assistant || log_error "Unable to download assistant files from github"
 	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
-	composer install -d=${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
+	composer install -d ${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
 }
 
@@ -346,7 +346,8 @@ function downloadUIFiles()
 	log_info "Cloning latest ui files from github"
 	git clone --depth 1 https://github.com/${repo_ui} /tmp/mudpi || log_error "Unable to download ui files from github"
 	sudo mv /tmp/mudpi $webroot_dir || log_error "Unable to move Mudpi UI to web root"
-	composer install -d=${webroot_dir}/mudpi || log_error "Unable to run composer install"
+	sleep 1
+	composer install -d ${webroot_dir}/mudpi || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi" || log_error "Unable to set permissions in '$webroot_dir'"
 }
 
