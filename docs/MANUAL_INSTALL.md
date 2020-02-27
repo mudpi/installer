@@ -1,5 +1,7 @@
+<img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="60px">
+
 # Manual Installation
-Below are the manual installation tasks that the installer will run:
+Below are the manual installation tasks to get MudPi installed and running on RaspberryPi. The installer will take care of this for you.
 
 Make folders for MudPi
 ```
@@ -158,6 +160,12 @@ www-data ALL=(ALL) NOPASSWD:/sbin/iw dev wlan0 scan ap-force
 www-data ALL=(ALL) NOPASSWD:/usr/bin/auto_hotspot.sh
 ```
 
+## Completed
+Reboot
+```
+sudo reboot
+```
+
 ## Nginx Web Server (optional)
 Install Nginx (web server) and DB
 ```
@@ -191,6 +199,11 @@ sudo cp /var/www/html/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mud
 sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
 ```
 
+Restart nginx
+```
+sudo service nginx restart
+```
+
 ## MudPi Assistant (optional)
 Clone in Assistant files and set permissions
 ```
@@ -211,7 +224,7 @@ sudo cp /etc/mudpi/installer/configs/assistant_redirect.conf /etc/nginx/sites-av
 sudo ln -sf /etc/nginx/sites-available/assistant_redirect.conf /etc/nginx/sites-enabled
 ```
 
-Reboot
+Restart nginx
 ```
-sudo reboot
+sudo service nginx restart
 ```

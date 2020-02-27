@@ -3,13 +3,13 @@
 # MudPi Installer
 > A guided installation through setting up MudPi on a RaspberryPi
 
-MudPi Installer is a bash script to help download, install and configure everything needed to get MudPi running. The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete especially on slower models. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). MudPi will assume most of the work so its better to run on a fresh Raspbain install or a device that is not already heavily configured. Backups are made of existing files and configs in the event of an error and can be restored upon uninstall.
+MudPi Installer is a bash script to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). MudPi assumes most of the work so its ideal to run on a fresh Raspbain install or a pi that is not already heavily configured for other purposes. The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete(especially on older models). Backups are made of existing files and configs in the event of an error and can be restored upon uninstall.
 
 ## Prerequisites
 MudPi will install most of the needed prerequisites however you will need a few things beforehand.
 * Raspbian 9 (Stretch) or 10 (Buster)
 * Set Locale through raspi-config
-* Internet Connected
+* Internet Connection
 
 If you haven't already also do a quick update and reboot.
 ```
@@ -38,17 +38,6 @@ For full documentation visit [mudpi.app](https://mudpi.app/docs)
 For examples and guides on how to setup and use MudPi check out the [free guides available.](https://mudpi.app/guides)
 
 
-## FAQ
-Here are a few notes about the MudPi installer:
-### Backups
-Backups are located at `/etc/mudpi/backups`
-### Installation Failed
-Try rerunning the installer and if that fails again uninstall completely and try again.
-### Uninstall
-Uninstall MudPi and restore all backups:
-```
-sudo /etc/mudpi/installer/uninstall.sh
-```
 
 ## Versioning
 Breaking.Major.Minor
@@ -67,6 +56,35 @@ Breaking.Major.Minor
 * [Raspberry Pi Zero](https://www.raspberrypi.org/products/raspberry-pi-zero/)
 
 Let me know if you are able to confirm tests on any other devices
+
+
+## FAQ
+Here are a common questions about the MudPi installer and some solutions. When in doubt remove it all and reinstall.
+#### Where are backups stored?
+Backups are located at `/etc/mudpi/backups`. The uninstaller will restore those for you automatically.
+#### Uninstall
+Uninstall MudPi and restore all backups:
+```
+sudo /etc/mudpi/installer/uninstall.sh
+```
+#### Default Access Point Static IP
+`192.168.2.1`
+#### Default Access Point Password
+`MudPi123`
+#### Auto AP Mode?
+Auto AP Mode is a script that will trigger the access point in the event Wifi is not connected. Remove the cron jobs using `sudo crontab -e` to disable it. AP Mode checks every 10 minutes by default.
+#### Something not right with Auto AP?
+First check the logs `/etc/mudpi/logs/auto_hotspot.log` and look at scan results `/etc/mudpi/tmp/nearbynetworklist.txt`.
+#### Access Point activated after reboot even with saved Wifi configs
+Sometimes when the pi first boots it may try to run programs too soon. The Auto AP Mode might not have been able to determine a wifi connection yet so it defaulted to AP Mode. It will reconnect shortly on the next scan and turn off the AP.
+#### Installation Failed?
+Try rerunning the installer and if that fails again uninstall completely and try again.
+#### Do I neeed Assistant Installed?
+If you are using this installer and already established a Wifi connection then *probably not*. It is mainly to help me build multiple units at scale internally.
+#### Problems on Debian 9 (Stretch)?
+Verified on pi zero w running Debian 9.4 (Stretch), However I reccomend upgrading to buster. It was hard to even find an acrhive of old releases on the raspberrypi main site.
+#### Invalid Operation?
+Something got borked. Fresh raspbian install time.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
