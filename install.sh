@@ -487,6 +487,20 @@ function installDefaultConfigs() {
 	fi
 }
 
+function updateHostname() {
+
+	log_info "Checking hostname file...."
+
+	# Check if file needs patching
+	if [ $(sudo grep -c "raspberrypi" /etc/hostname) ]
+	then
+		sudo sed -i "s/raspberrypi/mudpi/g" /etc/hostname
+		log_info "Updating hostname file..."
+	else
+		log_info "Hostname already updated!"
+	fi
+}
+
 
 function updateHostsFile() {
 
@@ -502,11 +516,12 @@ function updateHostsFile() {
 		'10.45.12.1	play.googleapis.com #MUDPI-captiveportal'
 	)
 
-	# Check if sudoers needs patching
-	if [ $(sudo grep -c "#MUDPI" /etc/sudoers) -ne ${#newhosts[@]} ]
+	# Check if file needs patching
+	if [ $(sudo grep -c "#MUDPI" /etc/hosts) -ne ${#newhosts[@]} ]
 	then
 		# Sudoers file has incorrect number of commands. Wiping them out.
 		log_info "Cleaning hosts file..."
+		sudo sed -i "s/raspberrypi/mudpi/g" /etc/hosts
 		sudo sed -i "/#MUDPI/d" /etc/hosts
 		log_info "Updating hosts file..."
 		# patch /etc/sudoers file
@@ -536,6 +551,7 @@ function updateSudoersFile() {
 		'/bin/cp /tmp/wpa_supplicant.tmp /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf'
 		'/bin/cp /tmp/wpa_supplicant.tmp /etc/mudpi/tmp/wpa_supplicant.conf'
 		'/bin/rm /tmp/wpa_supplicant.tmp'
+		'/bin/rm -r /tmp/mudpi_core'
 		'/sbin/wpa_cli -i wlan[0-9] scan_results'
 		'/sbin/wpa_cli -i wlan[0-9] scan'
 		'/sbin/wpa_cli -i wlan[0-9] reconfigure'
@@ -559,9 +575,11 @@ function updateSudoersFile() {
 		'/sbin/iw dev wlan[0-9] scan ap-force'
 		'/sbin/iwgetid wlan[0-9] -r'
 		'/etc/mudpi/scripts'
+		'/etc/mudpi/scripts/update_mudpi.sh'
 		'/usr/bin/auto_hotspot'
 		'/usr/bin/start_hotspot'
 		'/usr/bin/stop_hotspot'
+		'/usr/bin/update_mudpi'
 	)
 
 	# Check if sudoers needs patching
@@ -631,6 +649,7 @@ function installMudpi() {
 		installAPMode
 	fi
 	installDefaultConfigs
+	updateHostname
 	updateHostsFile
 	updateSudoersFile
 	displaySuccess
