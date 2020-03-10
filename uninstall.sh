@@ -186,6 +186,11 @@ function clean_sudoers_file() {
 function clean_hosts_file() {
 	# should this check for only our commands?
 	sudo sed -i '/#MUDPI/d' /etc/hosts
+	sudo sed -i "s/mudpi/raspberrypi/g" /etc/hosts
+}
+
+function clean_hostname_file() {
+	sudo sed -i "s/mudpi/raspberrypi/g" /etc/hostname
 }
 
 function uninstall_mudpi() {
@@ -198,6 +203,7 @@ function uninstall_mudpi() {
 	remove_supervisor
 	clean_sudoers_file
 	clean_hosts_file
+	clean_hostname_file
 }
 
 uninstall_mudpi

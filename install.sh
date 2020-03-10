@@ -332,6 +332,9 @@ function downloadAssistantFiles()
 	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
 	composer install -d${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi_assistant -type d -exec chmod 755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi_assistant -type f -exec chmod 644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
+
 }
 
 
@@ -352,6 +355,8 @@ function downloadUIFiles()
 	sleep 1
 	composer install -d ${webroot_dir}/mudpi || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi" || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi -type d -exec chmod 755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi -type f -exec chmod 644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
 }
 
 # Check for existing /etc/network/interfaces and /etc/hostapd/hostapd.conf files
@@ -492,7 +497,7 @@ function updateHostname() {
 	log_info "Checking hostname file...."
 
 	# Check if file needs patching
-	if [ $(sudo grep -c "raspberrypi" /etc/hostname) ]
+	if [ $(sudo grep "raspberrypi" /etc/hostname) ]
 	then
 		sudo sed -i "s/raspberrypi/mudpi/g" /etc/hostname
 		log_info "Updating hostname file..."
