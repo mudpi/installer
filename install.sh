@@ -306,12 +306,12 @@ function downloadMudpiCoreFiles()
 	fi
 
 	if [ -d "$mudpi_dir/core" ]; then
-		sudo mv $mudpi_dir/core "$mudpi_dir/core.`date +%F_%H%M%S`" || log_error "Unable to remove old webroot directory"
+		sudo mv $mudpi_dir/core "$mudpi_dir/core.`date +%F_%H%M%S`" || log_error "Unable to remove old core directory"
 	fi
 
 	log_info "Cloning latest core files from github"
 	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
-	sudo mv /tmp/mudpi_core/* $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
+	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
 	pip3 install -r $mudpi_dir/core/requirements.txt
 }
@@ -419,6 +419,8 @@ function backupConfigs()
 function installDefaultConfigs() {
 	log_info "Moving over default configurations..."
 	sudo cp $mudpi_dir/installer/configs/supervisor_mudpi.conf /etc/supervisor/conf.d/mudpi.conf || log_error "Unable to install supervisor job"
+	sudo cp $mudpi_dir/installer/scripts/update_mudpi.sh /usr/bin/update_mudpi || log_error "Unable to install update_mudpi script file"
+	sudo chmod +x /usr/bin/update_mudpi || log_error "Unable to assign permissions for /usr/bin/update_mudpi"
 
 	if [ "$ui_option" == 1 ]; then
 		sudo rm /etc/nginx/sites-enabled/default
