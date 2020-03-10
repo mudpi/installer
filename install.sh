@@ -289,7 +289,7 @@ function downloadInstallerFiles()
 	fi
 
 	if [ -d "$mudpi_dir/installer" ]; then
-		sudo mv $mudpi_dir/installer "$mudpi_dir/installer.`date +%F-%R`" || log_error "Unable to remove old webroot directory"
+		sudo mv $mudpi_dir/installer "$mudpi_dir/installer.`date +%F_%H%M%S`" || log_error "Unable to remove old webroot directory"
 	fi
 
 	log_info "Cloning latest installer files from github"
@@ -306,12 +306,12 @@ function downloadMudpiCoreFiles()
 	fi
 
 	if [ -d "$mudpi_dir/core" ]; then
-		sudo mv $mudpi_dir/core "$mudpi_dir/core.`date +%F-%R`" || log_error "Unable to remove old webroot directory"
+		sudo mv $mudpi_dir/core "$mudpi_dir/core.`date +%F_%H%M%S`" || log_error "Unable to remove old webroot directory"
 	fi
 
 	log_info "Cloning latest core files from github"
 	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
-	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
+	sudo mv /tmp/mudpi_core/* $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
 	pip3 install -r $mudpi_dir/core/requirements.txt
 }
@@ -324,7 +324,7 @@ function downloadAssistantFiles()
 	fi
 
 	if [ -d "$webroot_dir/mudpi_assistant" ]; then
-		sudo mv ${webroot_dir}/mudpi_assistant "${webroot_dir}/mudpi_assistant.`date +%F-%R`" || log_error "Unable to remove old assistant webroot directory"
+		sudo mv ${webroot_dir}/mudpi_assistant "${webroot_dir}/mudpi_assistant.`date +%F_%H%M%S`" || log_error "Unable to remove old assistant webroot directory"
 	fi
 
 	log_info "Cloning latest assistant files from github"
@@ -343,7 +343,7 @@ function downloadUIFiles()
 	fi
 
 	if [ -d "$webroot_dir/mudpi" ]; then
-		sudo mv ${webroot_dir}/mudpi "${webroot_dir}/mudpi.`date +%F-%R`" || log_error "Unable to remove old ui webroot directory"
+		sudo mv ${webroot_dir}/mudpi "${webroot_dir}/mudpi.`date +%F_%H%M%S`" || log_error "Unable to remove old ui webroot directory"
 	fi
 
 	log_info "Cloning latest ui files from github"
@@ -359,61 +359,61 @@ function backupConfigs()
 {
 	echo "Making backups of current configs..."
 	if [ -f /etc/network/interfaces ]; then
-		sudo cp /etc/network/interfaces "$mudpi_dir/backups/interfaces.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/interfaces.`date +%F-%R`" "$mudpi_dir/backups/interfaces"
+		sudo cp /etc/network/interfaces "$mudpi_dir/backups/interfaces.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/interfaces.`date +%F_%H%M%S`" "$mudpi_dir/backups/interfaces"
 	fi
 
 	if [ -f /etc/hostapd/hostapd.conf ]; then
-		sudo cp /etc/hostapd/hostapd.conf "$mudpi_dir/backups/hostapd.conf.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/hostapd.conf.`date +%F-%R`" "$mudpi_dir/backups/hostapd.conf"
+		sudo cp /etc/hostapd/hostapd.conf "$mudpi_dir/backups/hostapd.conf.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/hostapd.conf.`date +%F_%H%M%S`" "$mudpi_dir/backups/hostapd.conf"
 	fi
 
 	if [ -f /etc/dnsmasq.conf ]; then
-		sudo cp /etc/dnsmasq.conf "$mudpi_dir/backups/dnsmasq.conf.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/dnsmasq.conf.`date +%F-%R`" "$mudpi_dir/backups/dnsmasq.conf"
+		sudo cp /etc/dnsmasq.conf "$mudpi_dir/backups/dnsmasq.conf.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/dnsmasq.conf.`date +%F_%H%M%S`" "$mudpi_dir/backups/dnsmasq.conf"
 	fi
 
 	if [ -f /etc/dhcpcd.conf ]; then
-		sudo cp /etc/dhcpcd.conf "$mudpi_dir/backups/dhcpcd.conf.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/dhcpcd.conf.`date +%F-%R`" "$mudpi_dir/backups/dhcpcd.conf"
+		sudo cp /etc/dhcpcd.conf "$mudpi_dir/backups/dhcpcd.conf.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/dhcpcd.conf.`date +%F_%H%M%S`" "$mudpi_dir/backups/dhcpcd.conf"
 		cat /etc/dhcpcd.conf | sudo tee -a ${mudpi_dir}/networking/defaults
 	fi
 
 	if [ -f /etc/rc.local ]; then
-		sudo cp /etc/rc.local "$mudpi_dir/backups/rc.local.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/rc.local.`date +%F-%R`" "$mudpi_dir/backups/rc.local"
+		sudo cp /etc/rc.local "$mudpi_dir/backups/rc.local.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/rc.local.`date +%F_%H%M%S`" "$mudpi_dir/backups/rc.local"
 	fi
 
 	if [ -f /etc/mudpi/core/mudpi.config ]; then
-		sudo cp $mudpi_dir/mudpi.config "$mudpi_dir/backups/mudpi.config.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/mudpi.config.`date +%F-%R`" "$mudpi_dir/backups/mudpi.config"
+		sudo cp $mudpi_dir/mudpi.config "$mudpi_dir/backups/mudpi.config.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/mudpi.config.`date +%F_%H%M%S`" "$mudpi_dir/backups/mudpi.config"
 	fi
 
 	if [ -f /etc/sudoers ]; then
-		sudo cp /etc/sudoers "$mudpi_dir/backups/sudoers.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/sudoers.`date +%F-%R`" "$mudpi_dir/backups/sudoers"
+		sudo cp /etc/sudoers "$mudpi_dir/backups/sudoers.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/sudoers.`date +%F_%H%M%S`" "$mudpi_dir/backups/sudoers"
 	fi
 
 	if [ -f /etc/redis/redis.conf ]; then
-		sudo cp /etc/redis/redis.conf "$mudpi_dir/backups/redis.conf.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/redis.conf.`date +%F-%R`" "$mudpi_dir/backups/redis.conf"
+		sudo cp /etc/redis/redis.conf "$mudpi_dir/backups/redis.conf.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/redis.conf.`date +%F_%H%M%S`" "$mudpi_dir/backups/redis.conf"
 	fi
 	
 	if [ -d /etc/nginx ]; then
-		sudo tar -czf "$mudpi_dir/backups/nginx.`date +%F-%R`.tar.gz" "/etc/nginx/sites-available"
+		sudo tar -czf "$mudpi_dir/backups/nginx.`date +%F_%H%M%S`.tar.gz" "/etc/nginx/sites-available"
 	fi
 
 	if [ -f /etc/hosts ]; then
-		sudo cp /etc/hosts "$mudpi_dir/backups/hosts.`date +%F-%R`"
-		sudo ln -sf "$mudpi_dir/backups/hosts.`date +%F-%R`" "$mudpi_dir/backups/hosts"
+		sudo cp /etc/hosts "$mudpi_dir/backups/hosts.`date +%F_%H%M%S`"
+		sudo ln -sf "$mudpi_dir/backups/hosts.`date +%F_%H%M%S`" "$mudpi_dir/backups/hosts"
 	fi
 
-	sudo crontab -u "$user" -l > "/tmp/cron.`date +%F-%R`"
-	sudo mv "/tmp/cron.`date +%F-%R`" "$mudpi_dir/backups/cron.`date +%F-%R`"
-	sudo ln -sf "$mudpi_dir/backups/cron.`date +%F-%R`" "$mudpi_dir/backups/cron"
-	sudo crontab -l > "/tmp/cron_root.`date +%F-%R`"
-	sudo mv "/tmp/cron_root.`date +%F-%R`" "$mudpi_dir/backups/cron.`date +%F-%R`"
-	sudo ln -sf "$mudpi_dir/backups/cron_root.`date +%F-%R`" "$mudpi_dir/backups/cron_root"
+	sudo crontab -u "$user" -l > "/tmp/cron.`date +%F_%H%M%S`"
+	sudo mv "/tmp/cron.`date +%F_%H%M%S`" "$mudpi_dir/backups/cron.`date +%F_%H%M%S`"
+	sudo ln -sf "$mudpi_dir/backups/cron.`date +%F_%H%M%S`" "$mudpi_dir/backups/cron"
+	sudo crontab -l > "/tmp/cron_root.`date +%F_%H%M%S`"
+	sudo mv "/tmp/cron_root.`date +%F_%H%M%S`" "$mudpi_dir/backups/cron.`date +%F_%H%M%S`"
+	sudo ln -sf "$mudpi_dir/backups/cron_root.`date +%F_%H%M%S`" "$mudpi_dir/backups/cron_root"
 }
 
 function installDefaultConfigs() {
