@@ -188,7 +188,7 @@ function installDependencies()
 		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
 	fi
 	rm composer-setup.php
-	sudo apt install redis-server || log_error "Unable to install redis"
+	sudo apt-get install redis-server -y || log_error "Unable to install redis"
 	sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf || log_error "Unable to update /etc/redis/redis.conf"
 	sudo systemctl restart redis || log_error "Unable to restart redis"
 }
@@ -332,8 +332,8 @@ function downloadAssistantFiles()
 	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
 	composer install -d${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
-	sudo find ${webroot_dir}/mudpi_assistant -type d -exec chmod 755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
-	sudo find ${webroot_dir}/mudpi_assistant -type f -exec chmod 644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi_assistant -type d -exec chmod 1755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
+	sudo find ${webroot_dir}/mudpi_assistant -type f -exec chmod 1644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
 
 }
 
@@ -654,9 +654,11 @@ function installMudpi() {
 		installAPMode
 	fi
 	installDefaultConfigs
-	updateHostname
+	sudo usermod -a -G www-data pi
+	sudo usermod -a -G video,gpio,spi,i2c www-data
 	updateHostsFile
 	updateSudoersFile
+	updateHostname
 	displaySuccess
 }
 
