@@ -99,11 +99,11 @@ version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml "
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
@@ -167,7 +167,9 @@ function installDependencies()
 	if [ "$rasp_version" -eq "9" ]; then
 		sudo sed -i 's/stretch/buster/g' /etc/apt/sources.list
 	fi
-	sudo add-apt-repository ppa:ondrej/php
+	sudo apt-get -y install apt-transport-https lsb-release ca-certificates curl
+	sudo curl -sSL -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+	sudo sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
@@ -185,7 +187,9 @@ function installDependencies()
 	if [ -f "/usr/local/bin/composer" ]; then
 		log_info "Composer already installed!"
 	else
-		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer || log_error "Problem installing composer"
+		mkdir -p $HOME/.local/bin
+		sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=$HOME/.local/bin --filename=composer || log_error "Problem installing composer"
+		export PATH="$HOME/.local/bin:$PATH"
 	fi
 	rm composer-setup.php
 	sudo apt-get install redis-server -y || log_error "Unable to install redis"
@@ -313,7 +317,7 @@ function downloadMudpiCoreFiles()
 	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
 	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
-	pip3 install -r $mudpi_dir/core/requirements.txt
+	sudo pip3 install -r $mudpi_dir/core/requirements.txt
 }
 
 # Fetches latest files from github
@@ -330,7 +334,7 @@ function downloadAssistantFiles()
 	log_info "Cloning latest assistant files from github"
 	git clone --depth 1 https://github.com/${repo_assistant} /tmp/mudpi_assistant || log_error "Unable to download assistant files from github"
 	sudo mv /tmp/mudpi_assistant $webroot_dir || log_error "Unable to move Mudpi to web root"
-	composer install -d${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
+	composer update -d${webroot_dir}/mudpi_assistant || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi_assistant" || log_error "Unable to set permissions in '$webroot_dir'"
 	sudo find ${webroot_dir}/mudpi_assistant -type d -exec chmod 1755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
 	sudo find ${webroot_dir}/mudpi_assistant -type f -exec chmod 1644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
@@ -353,7 +357,7 @@ function downloadUIFiles()
 	git clone --depth 1 https://github.com/${repo_ui} /tmp/mudpi || log_error "Unable to download ui files from github"
 	sudo mv /tmp/mudpi $webroot_dir || log_error "Unable to move Mudpi UI to web root"
 	sleep 1
-	composer install -d ${webroot_dir}/mudpi || log_error "Unable to run composer install"
+	composer update -d ${webroot_dir}/mudpi || log_error "Unable to run composer install"
 	sudo chown -R $mudpi_user:$mudpi_user "${webroot_dir}/mudpi" || log_error "Unable to set permissions in '$webroot_dir'"
 	sudo find ${webroot_dir}/mudpi -type d -exec chmod 755 {} + || log_error "Unable to set permissions in '$webroot_dir'"
 	sudo find ${webroot_dir}/mudpi -type f -exec chmod 644 {} + || log_error "Unable to set permissions in '$webroot_dir'"
@@ -622,6 +626,9 @@ function enableAutoAPMode() {
 
 function displaySuccess() {
 	echo -e "${green}MudPi installed successfully!"
+	echo "--"
+	echo -e "${maroon}Add mudpi.conf to /etc/mudpi/core before rebooting"
+	echo "--"
 	echo "It is recommended to reboot the system now. 'sudo reboot'"
 	if [ "$force_yes" == 1 ]; then
 		sudo reboot || log_error "Unable to reboot"
@@ -656,6 +663,7 @@ function installMudpi() {
 	installDefaultConfigs
 	sudo usermod -a -G www-data pi
 	sudo usermod -a -G video,gpio,spi,i2c www-data
+	sudo chmod 775 /etc/mudpi/logs
 	updateHostsFile
 	updateSudoersFile
 	updateHostname
