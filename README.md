@@ -41,11 +41,11 @@ Here are a common questions about the MudPi installer and some solutions. When i
 #### Installation Failed?
 Try rerunning the installer and if that fails again uninstall completely and try again.
 #### Where are backups stored?
-Backups are located at `/etc/mudpi/backups`. The uninstaller will restore those for you automatically.
+Backups are located at `/home/mudpi/backups`. The uninstaller will restore those for you automatically.
 #### Uninstall
 Uninstall MudPi and restore all backups:
 ```
-sudo /etc/mudpi/installer/uninstall.sh
+sudo /home/mudpi/installer/uninstall.sh
 ```
 #### Default Access Point Static IP
 `192.168.2.1`
@@ -54,7 +54,7 @@ sudo /etc/mudpi/installer/uninstall.sh
 #### Auto AP Mode?
 Auto AP Mode is a script that will trigger the access point in the event Wifi is not connected. Remove the cron jobs using `sudo crontab -e` to disable it. AP Mode checks every 10 minutes by default.
 #### Something not right with Auto AP?
-First check the logs `/etc/mudpi/logs/auto_hotspot.log` and look at scan results `/etc/mudpi/tmp/nearbynetworklist.txt`.
+First check the logs `/home/mudpi/logs/auto_hotspot.log` and look at scan results `/home/mudpi/tmp/nearbynetworklist.txt`.
 #### Access Point activated after reboot even with saved Wifi configs
 Sometimes when the pi first boots it may try to run programs too soon. The Auto AP Mode might not have been able to determine a wifi connection yet so it defaulted to AP Mode. It will reconnect shortly on the next scan and turn off the AP. The default scan interval is 5 minutes.
 #### Do I neeed Assistant Installed?

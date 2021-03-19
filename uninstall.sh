@@ -1,5 +1,5 @@
 #!/bin/bash
-mudpi_dir="/etc/mudpi"
+mudpi_dir="/home/mudpi"
 mudpi_user="www-data"
 rasp_version=`sed 's/\..*//' /etc/debian_version`
 webroot_dir="/var/www/html" 
