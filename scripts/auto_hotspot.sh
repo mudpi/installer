@@ -23,8 +23,8 @@ wpassid=$(awk '/ssid="/{ print $0 }' $wpaConfig | awk -F'ssid=' '{ print $2 }' O
 interface='wlan0'
 staticip='192.168.2.1'
 ssids=($wpassid)
-networkscanfile='/etc/mudpi/tmp/nearbynetworklist.txt'
-apfile='/etc/mudpi/tmp/ap_mode'
+networkscanfile='/home/mudpi/tmp/nearbynetworklist.txt'
+apfile='/home/mudpi/tmp/ap_mode'
 #ssids=('mySSID1' 'mySSID2' 'mySSID3') # Uncomment to override with specific network ssids
 macaddrs=() # Add Hidden Network Mac Addresses Here
 networks=("${ssids[@]}" "${macaddrs[@]}")
