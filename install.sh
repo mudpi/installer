@@ -17,6 +17,7 @@ hostname="mudpi"
 maroon='\033[0;35m'
 green='\033[1;32m'
 user=$(whoami)
+ip=$(hostname -I)
 # Grab some version details
 VERSION=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")' )
 rasp_version=`sed 's/\..*//' /etc/debian_version`
@@ -116,7 +117,7 @@ function installationSetup()
 	log_info "Confirm Settings"
 	echo "Detected ${version_msg}" 
 	echo "MudPi Install directory: ${mudpi_dir}"
-	echo -n "Install to web server root directory: ${webroot_dir}? [Y/n]: "
+	echo -n "Use ${webroot_dir} for web root? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
 		if [ "$answer" != "${answer#[Nn]}" ]; then
@@ -125,7 +126,7 @@ function installationSetup()
 	else
 		echo -e
 	fi
-	echo "Install to directory: ${webroot_dir}"
+	echo "Web directory root: ${webroot_dir}"
 
 	echo -n "Complete installation with these settings? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
@@ -185,7 +186,9 @@ function installDependencies()
 	if [ "$rasp_version" -eq "9" ]; then
 		sudo sed -i 's/stretch/buster/g' /etc/apt/sources.list
 	fi
-	sudo add-apt-repository ppa:ondrej/php
+	sudo apt-get -y install apt-transport-https lsb-release ca-certificates curl
+	sudo curl -sSL -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+	sudo sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
@@ -199,7 +202,7 @@ function installDependencies()
 		echo "Main Depepencies Successfully Installed"
 	fi
 	sudo apt-get install ffmpeg -y --fix-missing || log_error "Unable to install ffmpeg"
-	sudo pip3 install RPi.GPIO Adafruit_DHT || log_error "Unable to install pip3 packages"
+	sudo pip3 install RPi.GPIO || log_error "Unable to install pip3 packages"
 	if [ -f "/usr/local/bin/composer" ]; then
 		log_info "Composer already installed!"
 	else
@@ -209,6 +212,8 @@ function installDependencies()
 	sudo apt-get install redis-server -y || log_error "Unable to install redis"
 	sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf || log_error "Unable to update /etc/redis/redis.conf"
 	sudo systemctl restart redis || log_error "Unable to restart redis"
+	sudo apt-get install mosquitto mosquitto-clients -y || log_error "Unable to install MQTT Broker"
+	sudo systemctl enable mosquitto.service || log_error "Unable to start MQTT"
 }
 
 function askNginxInstall() {
@@ -331,7 +336,10 @@ function downloadMudpiCoreFiles()
 	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
 	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
+	sudo chmod g+w $mudpi_dir/core || log_error "Unable to set write permissions in $mudpi_dir"
 	pip3 install -r $mudpi_dir/core/requirements.txt
+	python3 $mudpi_dir/core/setup.py build >/dev/null 2>&1 || log_error "Problem building MudPi core package"
+	python3 $mudpi_dir/core/setup.py install >/dev/null 2>&1 || log_error "Problem installing MudPi core python package"
 }
 
 # Fetches latest files from github
@@ -407,7 +415,7 @@ function backupConfigs()
 		sudo ln -sf "$mudpi_dir/backups/rc.local.`date +%F_%H%M%S`" "$mudpi_dir/backups/rc.local"
 	fi
 
-	if [ -f /etc/mudpi/core/mudpi.config ]; then
+	if [ -f $mudpi_dir/core/mudpi.config ]; then
 		sudo cp $mudpi_dir/mudpi.config "$mudpi_dir/backups/mudpi.config.`date +%F_%H%M%S`"
 		sudo ln -sf "$mudpi_dir/backups/mudpi.config.`date +%F_%H%M%S`" "$mudpi_dir/backups/mudpi.config"
 	fi
@@ -470,7 +478,7 @@ function installDefaultConfigs() {
 
 	if [ "$nginx_option" == 1 ]; then
 		echo "Installing MudPi Web Dashboard..."
-		echo "Visit 'mudpi.home' or the assigned pi IP"
+		echo "Visit 'mudpi.home' or the assigned pi IP: $ip"
 		sudo service nginx restart || log_error "Unable to restart nginx (check the configs)"
 	fi
 
@@ -572,7 +580,7 @@ function updateSudoersFile() {
 		'/bin/cat /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf'
 		'/bin/cp /tmp/wpa_supplicant.tmp /etc/wpa_supplicant/wpa_supplicant.conf'
 		'/bin/cp /tmp/wpa_supplicant.tmp /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf'
-		'/bin/cp /tmp/wpa_supplicant.tmp /etc/mudpi/tmp/wpa_supplicant.conf'
+		'/bin/cp /tmp/wpa_supplicant.tmp /home/mudpi/tmp/wpa_supplicant.conf'
 		'/bin/rm /tmp/wpa_supplicant.tmp'
 		'/bin/rm -r /tmp/mudpi_core'
 		'/sbin/wpa_cli -i wlan[0-9] scan_results'
@@ -591,18 +599,21 @@ function updateSudoersFile() {
 		'/bin/systemctl stop dnsmasq.service'
 		'/bin/cp /tmp/dnsmasqdata /etc/dnsmasq.conf'
 		'/bin/cp /tmp/dhcpddata /etc/dhcpcd.conf'
-		'/bin/cp /etc/mudpi/networking/dhcpcd.conf /etc/dhcpcd.conf'
+		'/bin/cp /home/mudpi/networking/dhcpcd.conf /etc/dhcpcd.conf'
 		'/sbin/ip link set wlan[0-9] down'
 		'/sbin/ip link set wlan[0-9] up'
 		'/sbin/ip -s a f label wlan[0-9]'
 		'/sbin/iw dev wlan[0-9] scan ap-force'
 		'/sbin/iwgetid wlan[0-9] -r'
-		'/etc/mudpi/scripts'
-		'/etc/mudpi/scripts/update_mudpi.sh'
+		'/home/mudpi/scripts'
+		'/home/mudpi/scripts/update_mudpi.sh'
+		'/home/mudpi/installer/scripts'
+		'/home/mudpi/installer/scripts/update_mudpi.sh'
 		'/usr/bin/auto_hotspot'
 		'/usr/bin/start_hotspot'
 		'/usr/bin/stop_hotspot'
 		'/usr/bin/update_mudpi'
+		'/usr/bin/backup'
 	)
 
 	# Check if sudoers needs patching

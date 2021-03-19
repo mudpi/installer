@@ -1,7 +1,7 @@
 <img alt="MudPi Smart Garden" title="MudPi Smart Garden" src="https://mudpi.app/img/mudPI_LOGO_small_flat.png" width="100px">
 
 # MudPi Installer
-> A guided installation tool to download and setup MudPi on a RaspberryPi
+> A guided installation tool to download and setup MudPi on a linux SBC board including raspberry pi.
 
 MudPi Installer is a tool to help download, install and configure everything needed to get MudPi running. You will be guided through installing [MudPi Core](https://github.com/mudpi/mudpi-core), [MudPi Assistant (Optional)](https://github.com/mudpi/assistant) and [MudPi UI (Optional)](https://github.com/mudpi/ui). The installer will run all the [manual installation](docs/MANUAL_INSTALL.md) tasks and take a several minutes to complete (especially on older models).
 
@@ -10,6 +10,7 @@ MudPi will install most of the needed prerequisites however you will need a few 
 * Raspbian 9 (Stretch) or 10 (Buster)
 * Set Locale through raspi-config
 * Internet Connection
+* Python 3.7+
 
 If you haven't already also do a quick update and reboot.
 ```
@@ -54,7 +55,7 @@ Auto AP Mode is a script that will trigger the access point in the event Wifi is
 #### Something not right with Auto AP?
 First check the logs `/etc/mudpi/logs/auto_hotspot.log` and look at scan results `/etc/mudpi/tmp/nearbynetworklist.txt`.
 #### Access Point activated after reboot even with saved Wifi configs
-Sometimes when the pi first boots it may try to run programs too soon. The Auto AP Mode might not have been able to determine a wifi connection yet so it defaulted to AP Mode. It will reconnect shortly on the next scan and turn off the AP.
+Sometimes when the pi first boots it may try to run programs too soon. The Auto AP Mode might not have been able to determine a wifi connection yet so it defaulted to AP Mode. It will reconnect shortly on the next scan and turn off the AP. The default scan interval is 5 minutes.
 #### Do I neeed Assistant Installed?
 If you are using this installer and already established a Wifi connection then *probably not*. It is mainly to help me build multiple units at scale internally.
 #### Problems on Debian 9 (Stretch)?

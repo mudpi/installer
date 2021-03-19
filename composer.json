@@ -1,9 +1,9 @@
 {
     "name": "mudpi/mudpi-installer",
-    "description": "Mudpi installer to download and configure MudPi for RaspberryPi.",
+    "description": "Mudpi installer to download and configure MudPi for linux.",
     "version": "0.1.0",
     "type": "library",
-    "keywords": ["mudpi", "garden", "installer", "bash", "raspberry pi"],
+    "keywords": ["mudpi", "automation", "garden", "home", "installer", "bash", "linux", "raspberry pi"],
     "homepage": "https://mudpi.app",
     "time": "2020-01-01",
     "authors": [
