@@ -147,7 +147,7 @@ function setupUser() {
 	        echo "Creating user ${mudpi_user} with password: mudpiapp"
 	        sudo adduser $mudpi_user --gecos "MudPi,1,1,1" --disabled-password
 			echo "$mudpi_user:mudpiapp" | sudo chpasswd
-	        sudo usermod -a -G pi,gpio,i2c,spi,audio,video,www-data $mudpi_user
+	        sudo usermod -a -G pi,gpio,i2c,spi,audio,video,www-data,sudo $mudpi_user
 	else
 	        echo "User $mudpi_user already exists"
 	fi
@@ -340,8 +340,8 @@ function downloadMudpiCoreFiles()
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
 	sudo chmod g+w $mudpi_dir/core || log_error "Unable to set write permissions in $mudpi_dir"
 	sudo pip3 install -r $mudpi_dir/core/requirements.txt
-	python3 $mudpi_dir/core/setup.py build >/dev/null 2>&1 || log_error "Problem building MudPi core package"
-	python3 $mudpi_dir/core/setup.py install >/dev/null 2>&1 || log_error "Problem installing MudPi core python package"
+	sudo python3 $mudpi_dir/core/setup.py build >/dev/null 2>&1 || log_error "Problem building MudPi core package"
+	sudo python3 $mudpi_dir/core/setup.py install >/dev/null 2>&1 || log_error "Problem installing MudPi core python package"
 }
 
 # Fetches latest files from github
