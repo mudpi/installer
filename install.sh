@@ -335,7 +335,7 @@ function downloadMudpiCoreFiles()
 	fi
 
 	log_info "Cloning latest core files from github"
-	git clone --depth 1 https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
+	git clone --depth 1 -b $branch https://github.com/${repo} /tmp/mudpi_core || log_error "Unable to download core files from github"
 	sudo mv /tmp/mudpi_core $mudpi_dir/core || log_error "Unable to move Mudpi core to $mudpi_dir"
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
 	sudo chmod g+w $mudpi_dir/core || log_error "Unable to set write permissions in $mudpi_dir"
