@@ -195,7 +195,7 @@ sudo rm /etc/nginx/sites-available/default
 ## MudPi UI (optional)
 Clone in UI files and set permissions
 ```
-git clone --depth 1 https://github.com/mudpi/ui /tmp/mudpi_core
+git clone --depth 1 https://github.com/mudpi/ui /tmp/mudpi_ui
 sudo mv /tmp/mudpi_ui /var/www/html/mudpi
 sudo chown -R www-data:www-data "/var/www/html/mudpi"
 ```
@@ -214,7 +214,7 @@ sudo service nginx restart
 ## MudPi Assistant (optional)
 Clone in Assistant files and set permissions
 ```
-git clone --depth 1 https://github.com/mudpi/assistant /tmp/mudpi_core
+git clone --depth 1 https://github.com/mudpi/assistant /tmp/mudpi_assistant
 sudo mv /tmp/mudpi_assistant /var/www/html/mudpi
 sudo chown -R www-data:www-data "/var/www/html/mudpi_assistant"
 ```
