@@ -9,9 +9,11 @@ repo_installer="mudpi/installer"
 repo_assistant="mudpi/assistant"
 repo_ui="mudpi/ui"
 branch="master"
-mudpi_dir="/etc/mudpi"
+mudpi_dir="/home/mudpi"
 webroot_dir="/var/www/html"
-mudpi_user="www-data"
+mudpi_user="mudpi"
+web_user="www-data"
+hostname="mudpi"
 maroon='\033[0;35m'
 green='\033[1;32m'
 user=$(whoami)
@@ -52,7 +54,7 @@ while :; do
 		exit 1
 		;;
 		-v|--version)
-		printf "MudPi v${VERSION} - Configurable automated smart garden for RaspberryPi\n"
+		printf "MudPi v${VERSION} - Smart Automation for the Garden & Home\n"
 		exit 1
 	;;
 		-*|--*)
@@ -69,12 +71,12 @@ done
 
 function displayWelcome() {
 	echo -e "${green}\n"
-	echo -e ' __  __           _ _____ _ '
-	echo -e '|  \/  |         | |  __ (_)'
-	echo -e '| \  / |_   _  __| | |__) | '
-	echo -e '| |\/| | | | |/ _` |  ___/ | '
-	echo -e '| |  | | |_| | (_| | |   | | '
-	echo -e '|_|  |_|\__,_|\__,_|_|   |_| '
+	echo -e '███╗   ███╗██╗   ██╗██████╗ ██████╗ ██╗'
+	echo -e '████╗ ████║██║   ██║██╔══██╗██╔══██╗██║'
+	echo -e '██╔████╔██║██║   ██║██║  ██║██████╔╝██║'
+	echo -e '██║╚██╔╝██║██║   ██║██║  ██║██╔═══╝ ██║'
+	echo -e '██║ ╚═╝ ██║╚██████╔╝██████╔╝██║     ██║'
+	echo -e '╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝'
 	echo -e "Version: $VERSION"
 	echo -e '_________________________________________________'
 	echo -e "${maroon}The next few steps will guide you through the installation process."
@@ -99,11 +101,11 @@ version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php${php_version}-dev "
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
 elif [ "$rasp_version" -eq "9" ]; then
 	version_msg="Raspbian 9.0 (Stretch)" 
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php${php_version}-dev"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
@@ -113,7 +115,7 @@ function installationSetup()
 {
 	log_info "Confirm Settings"
 	echo "Detected ${version_msg}" 
-	echo "Install directory: ${mudpi_dir}"
+	echo "MudPi Install directory: ${mudpi_dir}"
 	echo -n "Install to web server root directory: ${webroot_dir}? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
@@ -138,9 +140,23 @@ function installationSetup()
 
 }
 
+function setupUser() {
+	# Create a MudPi user
+	if ! id "$mudpi_user" >/dev/null 2>&1; then
+	        echo "Creating user ${mudpi_user} with password: mudpiapp"
+	        sudo adduser $mudpi_user --gecos "MudPi,1,1,1" --disabled-password
+			echo "$mudpi_user:mudpiapp" | sudo chpasswd
+	        sudo usermod -a -G pi,gpio,i2c,spi,audio,video,www-data $mudpi_user
+	else
+	        echo "User $mudpi_user already exists"
+	fi
+	sudo usermod -a -G www-data pi #legacy
+	sudo usermod -a -G video,gpio,spi,i2c www-data # legacy
+}
+
 function makeDirectories() 
 {
-	#Make Mudpi folders and move configs
+	# Make Mudpi folders and move configs
 	echo "Creating directories..."
 	if [ ! -d "$mudpi_dir" ]; then
 		echo "$mudpi_dir directory doesn't exist. Creating..."
@@ -154,6 +170,8 @@ function makeDirectories()
 	sudo mkdir -p ${mudpi_dir}/logs
 	sudo mkdir -p ${mudpi_dir}/scripts
 	sudo mkdir -p ${mudpi_dir}/installer
+	sudo mkdir -p ${mudpi_dir}/img
+	sudo mkdir -p ${mudpi_dir}/video
 
 	sudo chown -R ${mudpi_user}:${mudpi_user} $mudpi_dir || log_error "Unable to change file ownership for '$mudpi_dir'"
 }
@@ -172,11 +190,11 @@ function installDependencies()
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
 	# retry check if dependencies fail
-	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl libtool -y --fix-missing; then
+	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing; then
 		# try a fix and install one more time
 		log_warning "Failed to install dependencies. Trying to fix-missing and reinstall..."
 		sudo apt-get install --fix-missing 
-		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl libtool -y --fix-missing || log_error "Unable to install dependencies"
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl -y --fix-missing || log_error "Unable to install dependencies"
 	else
 		echo "Main Depepencies Successfully Installed"
 	fi
@@ -499,7 +517,7 @@ function updateHostname() {
 	# Check if file needs patching
 	if [ $(sudo grep "raspberrypi" /etc/hostname) ]
 	then
-		sudo sed -i "s/raspberrypi/mudpi/g" /etc/hostname
+		sudo sed -i "s/raspberrypi/$hostname/g" /etc/hostname
 		log_info "Updating hostname file..."
 	else
 		log_info "Hostname already updated!"
@@ -513,7 +531,7 @@ function updateHostsFile() {
 
 	# Set commands array
 	newhosts=(
-		'192.168.2.1 mudpi mudpi.local mudpi.home #MUDPI-apmode'
+		"192.168.2.1 $hostname $hostname.local $hostname.home #MUDPI-apmode"
 		'10.45.12.1	clients3.google.com #MUDPI-captiveportal'
 		'10.45.12.1	clients.l.google.com #MUDPI-captiveportal'
 		'10.45.12.1	connectivitycheck.android.com #MUDPI-captiveportal'
@@ -526,7 +544,7 @@ function updateHostsFile() {
 	then
 		# Sudoers file has incorrect number of commands. Wiping them out.
 		log_info "Cleaning hosts file..."
-		sudo sed -i "s/raspberrypi/mudpi/g" /etc/hosts
+		sudo sed -i "s/raspberrypi/$hostname/g" /etc/hosts
 		sudo sed -i "/#MUDPI/d" /etc/hosts
 		log_info "Updating hosts file..."
 		# patch /etc/sudoers file
@@ -631,6 +649,7 @@ function displaySuccess() {
 function installMudpi() {
 	displayWelcome
 	installationSetup
+	setupUser
 	askNginxInstall
 	askUIInstall
 	askAssistantInstall
@@ -654,8 +673,6 @@ function installMudpi() {
 		installAPMode
 	fi
 	installDefaultConfigs
-	sudo usermod -a -G www-data pi
-	sudo usermod -a -G video,gpio,spi,i2c www-data
 	updateHostsFile
 	updateSudoersFile
 	updateHostname
