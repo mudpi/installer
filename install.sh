@@ -662,11 +662,11 @@ function displaySuccess() {
 function installMudpi() {
 	displayWelcome
 	installationSetup
-	setupUser
 	askNginxInstall
 	askUIInstall
 	askAssistantInstall
 	askAPModeInstall
+	setupUser
 	EnableSSH
 	installDependencies
 	makeDirectories

@@ -21,10 +21,11 @@ sudo reboot
 
 
 ## Installation
-Install MudPi from your RaspberryPi terminal using:
+Install MudPi by running the following command in the terminal on your device:
 ```
 curl -sL https://install.mudpi.app | bash
 ```
+_Install times vary depending on device. \~10-15mins_
 
 
 ### Note
@@ -62,6 +63,8 @@ If you are using this installer and already established a Wifi connection then *
 Verified on pi zero w running Debian 9.4 (stretch), however I reccomend upgrading to buster. It was hard to even find an archive of old releases on the Raspberrypi main site.
 #### Invalid Operation?
 Something got borked. Fresh raspbian install time.
+#### How to install other branches?
+`curl -sL https://install.mudpi.app | bash -s -- -b feature`
 
 ## Authors
 * Eric Davisson  - [Website](http://ericdavisson.com)
