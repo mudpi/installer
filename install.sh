@@ -340,8 +340,7 @@ function downloadMudpiCoreFiles()
 	sudo chown -R $mudpi_user:$mudpi_user "$mudpi_dir" || log_error "Unable to set permissions in '$mudpi_dir'"
 	sudo chmod g+w $mudpi_dir/core || log_error "Unable to set write permissions in $mudpi_dir"
 	sudo pip3 install -r $mudpi_dir/core/requirements.txt
-	sudo python3 $mudpi_dir/core/setup.py build >/dev/null 2>&1 || log_error "Problem building MudPi core package"
-	sudo python3 $mudpi_dir/core/setup.py install >/dev/null 2>&1 || log_error "Problem installing MudPi core python package"
+	sudo pip3 install $mudpi_dir/core >/dev/null 2>&1 || log_error "Problem installing MudPi core python package"
 }
 
 # Fetches latest files from github
