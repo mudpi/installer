@@ -214,7 +214,7 @@ function installDependencies()
 	sudo apt-get install redis-server -y || log_error "Unable to install redis"
 	sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf || log_error "Unable to update /etc/redis/redis.conf"
 	sudo systemctl restart redis || log_error "Unable to restart redis"
-	yes '' | sudo pecl install redis || log_error "Error during pecl redis install"
+	yes '' | sudo pecl install redis
 	sudo touch /etc/php/$php_version/mods-available/redis.ini || log_error "Unable to create redis.ini file in php/mods-available"
 	echo "extension=redis.so" | sudo tee /etc/php/$php_version/mods-available/redis.ini
 	sudo phpenmod redis || log_error "Unable to enable php-redis"
