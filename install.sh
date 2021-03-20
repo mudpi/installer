@@ -102,11 +102,11 @@ version_msg="Unknown Raspbian Version"
 if [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis php${php_version}-dev"
 elif [ "$rasp_version" -eq "9" ]; then
-	version_msg="Raspbian 9.0 (Stretch)" 
+	version_msg="Raspbian 9.0 (Stretch)"
 	php_version="7.3"
-	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis php${php_version}-dev"
 elif [ "$rasp_version" -lt "9" ]; then
 	echo "Raspbian ${rasp_version} is unsupported. Please upgrade."
 	exit 1
@@ -214,6 +214,10 @@ function installDependencies()
 	sudo apt-get install redis-server -y || log_error "Unable to install redis"
 	sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf || log_error "Unable to update /etc/redis/redis.conf"
 	sudo systemctl restart redis || log_error "Unable to restart redis"
+	yes '' | sudo pecl install redis || log_error "Error during pecl redis install"
+	sudo touch /etc/php/$php_version/mods-available/redis.ini || log_error "Unable to create redis.ini file in php/mods-available"
+	echo "extension=redis.so" | sudo tee /etc/php/$php_version/mods-available/redis.ini
+	sudo phpenmod redis || log_error "Unable to enable php-redis"
 	sudo apt-get install mosquitto mosquitto-clients -y || log_error "Unable to install MQTT Broker"
 	sudo systemctl enable mosquitto.service || log_error "Unable to start MQTT"
 }

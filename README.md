@@ -38,6 +38,8 @@ For full documentation visit [mudpi.app](https://mudpi.app/docs)
 
 ## FAQ
 Here are a common questions about the MudPi installer and some solutions. When in doubt remove it all and reinstall.
+#### Login for `mudpi` user?
+Default password is `mudpiapp`. I recommend changing this before production.
 #### Installation Failed?
 Try rerunning the installer and if that fails again uninstall completely and try again.
 #### Where are backups stored?
