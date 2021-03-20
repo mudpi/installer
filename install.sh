@@ -193,11 +193,11 @@ function installDependencies()
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
 	# retry check if dependencies fail
-	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 -y --fix-missing; then
+	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev -y --fix-missing; then
 		# try a fix and install one more time
 		log_warning "Failed to install dependencies. Trying to fix-missing and reinstall..."
 		sudo apt-get install --fix-missing 
-		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 -y --fix-missing || log_error "Unable to install dependencies"
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev -y --fix-missing || log_error "Unable to install dependencies"
 	else
 		echo "Main Depepencies Successfully Installed"
 	fi
