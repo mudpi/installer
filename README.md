@@ -76,14 +76,6 @@ Something got borked. Fresh raspbian install time.
 * Discord  - [Join](https://discord.gg/daWg2YH)
 * [Twitter.com/MudpiApp](https://twitter.com/mudpiapp)
 
-## Devices Tested On
-* [Raspberry Pi 2 Model B+](https://www.raspberrypi.org/products/raspberry-pi-2-model-b/)
-* [Raspberry Pi 3 Model B](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
-* [Raspberry Pi 3 Model B+](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
-* [Raspberry Pi Zero](https://www.raspberrypi.org/products/raspberry-pi-zero/)
-
-Let me know if you are able to confirm tests on any other devices
-
 ## Versioning
 Breaking.Major.Minor
 
