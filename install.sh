@@ -621,17 +621,17 @@ function updateSudoersFile() {
 		'/usr/bin/backup'
 	)
 
-	# Check if sudoers needs patching
-	if [ $(sudo grep -c $mudpi_user /etc/sudoers) -ne ${#commands[@]} ]
+	# Check if sudoers needs patching to allow web user rights
+	if [ $(sudo grep -c $web_user /etc/sudoers) -ne ${#commands[@]} ]
 	then
 		# Sudoers file has incorrect number of commands. Wiping them out.
 		log_info "Cleaning sudoers file..."
-		sudo sed -i "/$mudpi_user/d" /etc/sudoers
+		sudo sed -i "/$web_user/d" /etc/sudoers
 		log_info "Updating sudoers file..."
 		# patch /etc/sudoers file
 		for cmd in "${commands[@]}"
 		do
-			sudo bash -c "echo \"$mudpi_user ALL=(ALL) NOPASSWD:${cmd}\" | (EDITOR=\"tee -a\" visudo)" \ || log_error "Unable to update /etc/sudoers"
+			sudo bash -c "echo \"$web_user ALL=(ALL) NOPASSWD:${cmd}\" | (EDITOR=\"tee -a\" visudo)" \ || log_error "Unable to update /etc/sudoers"
 			IFS=$'\n'
 		done
 	else
