@@ -199,18 +199,24 @@ function installDependencies()
 	if [ "$rasp_version" -eq "9" ]; then
 		sudo sed -i 's/stretch/buster/g' /etc/apt/sources.list
 	fi
-	sudo apt-get -y install apt-transport-https lsb-release ca-certificates curl
-	sudo curl -sSL -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-	sudo sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+
+	if [ "$cpu_version" == 6 ]; then
+		sudo add-apt-repository ppa:ondrej/php
+	elif [ "$cpu_version" == 7 ]; then
+		sudo apt-get -y install apt-transport-https lsb-release ca-certificates curl
+		sudo curl -sSL -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+		sudo sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list'
+	fi
+		
 	sudo apt-get update
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
 	# retry check if dependencies fail
-	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv $opencv_packages -y --fix-missing; then
+	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv -y --fix-missing; then
 		# try a fix and install one more time
 		log_warning "Failed to install dependencies. Trying to fix-missing and reinstall..."
 		sudo apt-get install --fix-missing 
-		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv $opencv_packages -y --fix-missing || log_error "Unable to install dependencies"
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv -y --fix-missing || log_error "Unable to install dependencies"
 	else
 		echo "Main Depepencies Successfully Installed"
 	fi
