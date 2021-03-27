@@ -157,7 +157,7 @@ function setupUser() {
 	        echo "Creating user ${mudpi_user} with password: mudpiapp"
 	        sudo adduser $mudpi_user --gecos "MudPi,1,1,1" --disabled-password
 			echo "$mudpi_user:mudpiapp" | sudo chpasswd
-	        sudo usermod -a -G pi,gpio,i2c,spi,audio,video,www-data,sudo $mudpi_user
+	        sudo usermod -a -G pi,gpio,i2c,spi,audio,video,www-data,sudo,dialout $mudpi_user
 	else
 	        echo "User $mudpi_user already exists"
 	fi
