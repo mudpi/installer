@@ -116,21 +116,20 @@ fi
 # Check CPUinfo for package support
 cpu_message="Unknown CPU Version"
 cpu_version="Unknown"
+opencv_packages=""
 if echo "$cpu_info" | grep -q "ARMv6"; then
 	cpu_version="ARMv6"
 	opencv_packages="libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev python3-dev libatlas-base-dev gfortran"
 elif echo "$cpu_info" | grep -q "ARMv7"; then
 	cpu_version="ARMv7"
 	opencv_packages="libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev"
-else
-	opencv_packages=""
-	log_warning "Unable to detect CPU version"
 fi
 
 function installationSetup() 
 {
 	log_info "Confirm Settings"
 	echo "Detected ${version_msg}" 
+	echo "CPU ${cpu_version}" 
 	echo "MudPi Install directory: ${mudpi_dir}"
 	echo -n "Use ${webroot_dir} for web root? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
