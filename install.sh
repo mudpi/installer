@@ -21,6 +21,7 @@ ip=$(hostname -I)
 # Grab some version details
 VERSION=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")' )
 rasp_version=`sed 's/\..*//' /etc/debian_version`
+cpu=`cat /proc/cpuinfo`
 
 # Manual options to bypass prompts
 force_yes=0 #Option to force yes through any prompts
@@ -112,6 +113,20 @@ elif [ "$rasp_version" -lt "9" ]; then
 	exit 1
 fi
 
+# Check CPUinfo for package support
+cpu_message="Unknown CPU Version"
+cpu_version="Unknown"
+if echo "$cpu_info" | grep -q "ARMv6"; then
+	cpu_version="ARMv6"
+	opencv_packages="libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev python3-dev libatlas-base-dev gfortran"
+elif echo "$cpu_info" | grep -q "ARMv7"; then
+	cpu_version="ARMv7"
+	opencv_packages="libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev"
+else
+	opencv_packages=""
+	log_warning "Unable to detect CPU version"
+fi
+
 function installationSetup() 
 {
 	log_info "Confirm Settings"
@@ -168,13 +183,16 @@ function makeDirectories()
 	sudo mkdir -p ${mudpi_dir}/backups
 	sudo mkdir -p ${mudpi_dir}/networking/defaults
 	sudo mkdir -p ${mudpi_dir}/tmp
-	sudo mkdir -p ${mudpi_dir}/logs
 	sudo mkdir -p ${mudpi_dir}/scripts
 	sudo mkdir -p ${mudpi_dir}/installer
 	sudo mkdir -p ${mudpi_dir}/img
 	sudo mkdir -p ${mudpi_dir}/video
+	sudo mkdir -p ${mudpi_dir}/logs
+	sudo touch ${mudpi_dir}/logs/output.log
+	sudo touch ${mudpi_dir}/logs/error.log
 
 	sudo chown -R ${mudpi_user}:${mudpi_user} $mudpi_dir || log_error "Unable to change file ownership for '$mudpi_dir'"
+	sudo chmod 775 $mudpi_dir/logs
 }
 
 # Runs a system software update to make sure we're using all fresh packages
@@ -193,11 +211,11 @@ function installDependencies()
 	sudo apt-get dist-upgrade
 	sudo apt-get upgrade
 	# retry check if dependencies fail
-	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev -y --fix-missing; then
+	if ! sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv $opencv_packages -y --fix-missing; then
 		# try a fix and install one more time
 		log_warning "Failed to install dependencies. Trying to fix-missing and reinstall..."
 		sudo apt-get install --fix-missing 
-		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev -y --fix-missing || log_error "Unable to install dependencies"
+		sudo DEBIAN_FRONTEND=noninteractive apt-get install $php_package python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl python3-opencv $opencv_packages -y --fix-missing || log_error "Unable to install dependencies"
 	else
 		echo "Main Depepencies Successfully Installed"
 	fi
@@ -689,9 +707,8 @@ function installMudpi() {
 		installAPMode
 	fi
 	installDefaultConfigs
-	updateHostsFile
 	updateSudoersFile
-	sudo chmod 775 $mudpi_dir/logs
+	updateHostsFile
 	updateHostname
 	displaySuccess
 }
