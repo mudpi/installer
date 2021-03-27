@@ -116,20 +116,16 @@ fi
 # Check CPUinfo for package support
 cpu_message="Unknown CPU Version"
 cpu_version="Unknown"
-opencv_packages=""
 if echo "$cpu_info" | grep -q "ARMv6"; then
-	cpu_version="ARMv6"
-	opencv_packages="libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev python3-dev libatlas-base-dev gfortran"
+	cpu_version=6
 elif echo "$cpu_info" | grep -q "ARMv7"; then
-	cpu_version="ARMv7"
-	opencv_packages="libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev"
+	cpu_version=7
 fi
 
 function installationSetup() 
 {
 	log_info "Confirm Settings"
-	echo "Detected ${version_msg}" 
-	echo "CPU ${cpu_version}" 
+	echo "Detected ${version_msg} CPU: ARMv${cpu_version}" 
 	echo "MudPi Install directory: ${mudpi_dir}"
 	echo -n "Use ${webroot_dir} for web root? [Y/n]: "
 	if [ "$force_yes" == 0 ]; then
@@ -237,6 +233,14 @@ function installDependencies()
 	sudo phpenmod redis || log_error "Unable to enable php-redis"
 	sudo apt-get install mosquitto mosquitto-clients -y || log_error "Unable to install MQTT Broker"
 	sudo systemctl enable mosquitto.service || log_error "Unable to start MQTT"
+	if [ "$cpu_version" == 6 ]; then
+		sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev -y
+		sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
+		sudo apt-get install libxvidcore-dev libx264-dev -y
+		sudo apt-get install libatlas-base-dev gfortran -y
+	elif [ "$cpu_version" == 7 ]; then
+		sudo apt-get install libgpiod2 libatlas-base-dev libhdf5-dev libhdf5-serial-dev libjasper-dev libqtgui4 libqt4-test libilmbase-dev libopenexr-dev libgstreamer1.0-dev libavcodec-dev libavformat-dev libswscale-dev libwebp-dev -y
+	fi
 }
 
 function askNginxInstall() {
