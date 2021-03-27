@@ -21,7 +21,7 @@ ip=$(hostname -I)
 # Grab some version details
 VERSION=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")' )
 rasp_version=`sed 's/\..*//' /etc/debian_version`
-cpu=`cat /proc/cpuinfo`
+cpu_info=`cat /proc/cpuinfo`
 
 # Manual options to bypass prompts
 force_yes=0 #Option to force yes through any prompts
