@@ -278,13 +278,13 @@ function installNginx() {
 
 function askAssistantInstall() {
 	echo "MudPi Assistant is a web interface for first time configurations"
-	echo -n "Install mudpi-assistant and enable web configs? [Y/n]: "
+	echo -n "Install mudpi-assistant and enable web configs? [y/N]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
-		if [ "$answer" != "${answer#[Nn]}" ]; then
-			echo -e
-		else
+		if [ "$answer" != "${answer#[Yy]}" ]; then
 			assistant_option=1
+		else
+			echo -e
 		fi
 	else
 		assistant_option=1
@@ -308,13 +308,13 @@ function askUIInstall() {
 
 # ask to install access point
 function askAPModeInstall() {
-	echo -n "Install hostapd and make Access Point configuration? [Y/n]: "
+	echo -n "Install hostapd and make Access Point configuration? [y/N]: "
 	if [ "$force_yes" == 0 ]; then
 		read answer < /dev/tty
-		if [ "$answer" != "${answer#[Nn]}" ]; then
-			echo -e
-		else
+		if [ "$answer" != "${answer#[Yy]}" ]; then
 			ap_mode_option=1
+		else
+			echo -e
 		fi
 	else
 		ap_mode_option=1
