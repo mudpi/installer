@@ -240,7 +240,7 @@ function installDependencies()
 	sudo apt-get install mosquitto mosquitto-clients -y || log_error "Unable to install MQTT Broker"
 	sudo systemctl enable mosquitto.service || log_error "Unable to start MQTT"
 	if [ "$cpu_version" == 6 ]; then
-		sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev -y
+		sudo apt-get install libgpiod2 libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev -y
 		sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev -y
 		sudo apt-get install libxvidcore-dev libx264-dev -y
 		sudo apt-get install libatlas-base-dev gfortran -y
