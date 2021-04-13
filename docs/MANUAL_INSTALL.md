@@ -102,6 +102,7 @@ sudo chown -R www-data:www-data "/home/mudpi"
 Install MudPi required packages
 ```
 pip3 install -r /home/mudpi/core/requirements.txt
+pip3 install /home/mudpi/core/
 ```
 
 Make backups of all old configs
