@@ -52,7 +52,7 @@ sudo systemctl start ssh
 
 Install dependancies (without prompting)
 ```
-sudo DEBIAN_FRONTEND=noninteractive apt-get install php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl ffmpeg -y --fix-missing
+sudo DEBIAN_FRONTEND=noninteractive apt-get install php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml php7.3-dev php-redis python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl ffmpeg -y --fix-missing
 ```
 
 If anything fails try fix-missing
@@ -67,8 +67,10 @@ sudo pip3 install RPi.GPIO Adafruit_DHT
 
 Install composer
 ```
-sudo wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | sudo php -- --quiet --install-dir=/usr/local/bin --filename=composer
-export PATH="$HOME/.local/bin:$PATH"
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php -r "if (hash_file('sha384', 'composer-setup.php') === '756890a4488ce9024fc62c56153228907f1545c228516cbf63f885e036d37e9a59d27d63f46af1d4d07ee0f76181c7d3') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
+php -r "unlink('composer-setup.php');"
 ```
 
 Install redis and change config to allow systemd to manage it
@@ -100,6 +102,7 @@ sudo chown -R www-data:www-data "/home/mudpi"
 Install MudPi required packages
 ```
 pip3 install -r /home/mudpi/core/requirements.txt
+pip3 install /home/mudpi/core/
 ```
 
 Make backups of all old configs
@@ -209,9 +212,22 @@ sudo cp /var/www/html/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mud
 sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
 ```
 
+Enable php-redis
+```
+yes '' | sudo pecl install redis
+echo "extension=redis.so" | sudo tee /etc/php/7.3/mods-available/redis.ini
+sudo phpenmod redis
+sudo service php-fpm7.3 restart 
+```
+
 Restart nginx
 ```
 sudo service nginx restart
+```
+
+Install dependencies
+```
+composer update -d /var/www/html/mudpi
 ```
 
 ## MudPi Assistant (optional)
