@@ -217,6 +217,11 @@ Restart nginx
 sudo service nginx restart
 ```
 
+Install dependencies
+```
+composer update -d /var/www/html/mudpi
+```
+
 ## MudPi Assistant (optional)
 Clone in Assistant files and set permissions
 ```
