@@ -52,7 +52,7 @@ sudo systemctl start ssh
 
 Install dependancies (without prompting)
 ```
-sudo DEBIAN_FRONTEND=noninteractive apt-get install php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml php-redis python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl ffmpeg -y --fix-missing
+sudo DEBIAN_FRONTEND=noninteractive apt-get install php7.3 php7.3-cgi php7.3-common php7.3-cli php7.3-fpm php7.3-mbstring php7.3-mysql php7.3-opcache php7.3-curl php7.3-gd php7.3-curl php7.3-zip php7.3-xml php7.3-dev php-redis python3-pip supervisor nodejs npm git tmux curl wget zip unzip tmux htop libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses5-dev libgdbm-dev zlib1g-dev libreadline-dev libssl-dev tk-dev build-essential libncursesw5-dev libc6-dev openssl ffmpeg -y --fix-missing
 ```
 
 If anything fails try fix-missing
@@ -210,6 +210,14 @@ Copy config files over and create symlink
 ```
 sudo cp /var/www/html/mudpi/configs/mudpi_ui.conf /etc/nginx/sites-available/mudpi_ui.conf
 sudo ln -sf /etc/nginx/sites-available/mudpi_ui.conf /etc/nginx/sites-enabled
+```
+
+Enable php-redis
+```
+yes '' | sudo pecl install redis
+echo "extension=redis.so" | sudo tee /etc/php/7.3/mods-available/redis.ini
+sudo phpenmod redis
+sudo service php-fpm7.3 restart 
 ```
 
 Restart nginx
