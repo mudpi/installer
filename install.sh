@@ -100,7 +100,11 @@ function log_warning() {
 
 # Determine Raspbian version
 version_msg="Unknown Raspbian Version"
-if [ "$rasp_version" -eq "10" ]; then
+if [ "$rasp_version" -eq "11" ]; then
+	version_msg="Raspbian 11.0 (Bullseye)"
+	php_version="7.3"
+	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis php${php_version}-dev"
+elif [ "$rasp_version" -eq "10" ]; then
 	version_msg="Raspbian 10.0 (Buster)"
 	php_version="7.3"
 	php_package="php${php_version} php${php_version}-cgi php${php_version}-common php${php_version}-cli php${php_version}-fpm php${php_version}-mbstring php${php_version}-mysql php${php_version}-opcache php${php_version}-curl php${php_version}-gd php${php_version}-curl php${php_version}-zip php${php_version}-xml php-redis php${php_version}-dev"
