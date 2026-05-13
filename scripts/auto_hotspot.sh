@@ -1,34 +1,30 @@
 #!/bin/bash
 #
-# Title:     Auto AP (Acess Point)
+# Title:     Auto AP (Access Point)
 # Author:    Eric Davisson
 #            hi@ericdavisson.com
 # Project:   MudPi Setup
-# Website:  https://Mudpi.app
-# Copyright: Copyright (c) 2020 Eric Davisson <hi@ericdavisson.com>
-# Description: A script to check wifi connection and auto start an access point in the event of no wifi or failed connections.
+# Website:   https://mudpi.app
+# Copyright: Copyright (c) 2020-2026 Eric Davisson <hi@ericdavisson.com>
+# Description: Checks Wi-Fi connectivity via NetworkManager and automatically
+#              starts the MudPi hotspot when no known network is available.
+#              Designed for Raspberry Pi OS Bookworm+ (NetworkManager).
 #
+
 echo "-----------------------------"
 echo "        MudPi Auto AP        "
 date
 echo "-----------------------------"
 
-
 ## Settings
 #################################################
 lockfile='/var/run/auto_hotspot.pid'
-wpaConfig='/etc/wpa_supplicant/wpa_supplicant.conf'
-# Parse wpa_supplicant.conf and return csv list of network ssids
-wpassid=$(awk '/ssid="/{ print $0 }' $wpaConfig | awk -F'ssid=' '{ print $2 }' ORS=',' | sed 's/\"/''/g' | sed 's/,$//')
+hotspot_name='mudpi-hotspot'
 interface='wlan0'
-staticip='192.168.2.1'
-ssids=($wpassid)
-networkscanfile='/home/mudpi/tmp/nearbynetworklist.txt'
 apfile='/home/mudpi/tmp/ap_mode'
-#ssids=('mySSID1' 'mySSID2' 'mySSID3') # Uncomment to override with specific network ssids
-macaddrs=() # Add Hidden Network Mac Addresses Here
-networks=("${ssids[@]}" "${macaddrs[@]}")
-# Colors for pretty logs
+networkscanfile='/home/mudpi/tmp/nearbynetworklist.txt'
+max_scan_attempts=10
+
 colorinfo='\033[1;34m'
 colorerror='\033[1;31m'
 colorsuccess='\033[1;32m'
@@ -36,264 +32,228 @@ colorwarn='\033[1;33m'
 colorclear='\033[0m'
 ###################################################
 
-## LOCKFILE CHECK
-###################################################
-# Check for a lock file to see if process already running
-if [ -f $lockfile ]
-then
-	# Get the process id from lock file to check for process status
-	PID=$(cat $lockfile)
-	ps -p $PID >/dev/null 2>&1
-	if [ $? -eq 0 ]
-	then
-		echo -e "${colorwarn}Duplicate process already running PID: $PID${colorclear}"
-		exit 1
-	else
-		## Process not found assume not running
-		echo $$ > $lockfile
-	if [ $? -ne 0 ]
-	then
-		  echo -e "${colorerror}Could not create lock file${colorclear}"
-		  exit 1
-		fi
-	fi
-	else
-		# Create the lock file with current PID
-		echo $$ > $lockfile
-	if [ $? -ne 0 ]
-	then
-		echo -e "{$colorerror}Could not create lock file${colorclear}"
+## Preflight
+#################################################
+if ! command -v nmcli &>/dev/null; then
+	echo -e "${colorerror}Error: nmcli not found. NetworkManager is required.${colorclear}"
+	exit 1
+fi
+
+if ! nmcli -t -f NAME connection show | grep -q "^${hotspot_name}$"; then
+	echo -e "${colorerror}Error: Hotspot profile '${hotspot_name}' not found. Run the MudPi installer first.${colorclear}"
+	exit 1
+fi
+
+## Lockfile
+#################################################
+if [ -f "$lockfile" ]; then
+	PID=$(cat "$lockfile")
+	if ps -p "$PID" >/dev/null 2>&1; then
+		echo -e "${colorwarn}Duplicate process already running PID: ${PID}${colorclear}"
 		exit 1
 	fi
 fi
-# Lockfile aquired proceed with operations
+echo $$ > "$lockfile" || {
+	echo -e "${colorerror}Could not create lock file${colorclear}"
+	exit 1
+}
+trap 'rm -f "$lockfile"' EXIT
 
-
-## FUNCTIONS
+## Functions
 #####################################################################
 function log_success() {
-    echo -e "${colorsuccess}$* $colorclear"
+	echo -e "${colorsuccess}$*${colorclear}"
 }
 
 function log_info() {
-    echo -e "${colorinfo}Notice: $* $colorclear"
+	echo -e "${colorinfo}Notice: $*${colorclear}"
 }
 
 function log_error() {
-    echo -e "${colorerror}Error: $* $colorclear"
+	echo -e "${colorerror}Error: $*${colorclear}"
 }
 
 function log_warning() {
-    echo -e "${colorwarn}Warning: $* $colorclear"
+	echo -e "${colorwarn}Warning: $*${colorclear}"
 }
 
-ScanNearbyNetworks()
-{
-#Check to see what SSID's and MAC addresses are in range
-networkssid=('#null')
-i=0; j=0
-until [ $i -eq 1 ] #wait for wifi if busy, usb wifi is slower.
-do
-	echo "Attempting to scan for nearby networks...." 
-	scanresults=$((iw dev "$interface" scan ap-force | egrep "^BSS|SSID:") 2>&1) >/dev/null 2>&1 
-	echo "---Network Scan---" >> $networkscanfile
-	date >> $networkscanfile
-	echo $scanresults >> $networkscanfile
-	echo -e "\n" >> $networkscanfile
-	echo "Scan Finished"
-	log_info "Scan results saved to $networkscanfile"
+function is_hotspot_active() {
+	nmcli -t -f NAME connection show --active | grep -q "^${hotspot_name}$"
+}
 
-	if (($j >= 10)); then
-		log_error "To many scan attempts, falling back to AP Mode"
-		scanresults=""
-		i=1
-	elif echo "$scanresults" | grep "No such device (-19)" >/dev/null 2>&1; then
-		log_error "No Wifi Capable Device Found!"
-		wpa_supplicant -B -i "$interface" -c $wpaConfig >/dev/null 2>&1
-		exit 1
-	elif echo "$scanresults" | grep "Network is down (-100)" >/dev/null 2>&1; then
-		log_error "Network is down, attempt " $j
-		j=$((j + 1))
-		sleep 2
-	elif echo "$scanresults" | grep "Read-only file system (-30)" >/dev/null 2>&1; then
-		log_warning "Read-only file system, attempt " $j
-		j=$((j + 1))
-		sleep 2
-	elif ! echo "$scanresults" | grep "resource busy (-16)" >/dev/null 2>&1; then
-		echo "Nearby networks found"
-		i=1
-	elif echo "$scanresults" | grep "resource busy (-16)" >/dev/null 2>&1; then
-		j=$((j + 1))
-		log_error "Scan failed (resource busy), attempt " $j
-		sleep 2
-	else
-		log_error "Problem During Scan."
-		j=$((j + 1))
-		sleep 2
+function is_wifi_connected() {
+	nmcli -t -f TYPE,STATE connection show --active | grep -q "^802-11-wireless:activated"
+}
+
+function get_known_ssids() {
+	nmcli -t -f NAME,TYPE connection show | grep ':802-11-wireless$' | grep -v "^${hotspot_name}:" | cut -d: -f1
+}
+
+function scan_nearby_networks() {
+	local attempt=0
+	local scan_output=""
+
+	until [ $attempt -ge $max_scan_attempts ]; do
+		echo "Scanning for nearby networks (attempt $((attempt + 1)))..."
+		scan_output=$(nmcli -t -f SSID device wifi list --rescan yes ifname "$interface" 2>&1)
+
+		if echo "$scan_output" | grep -q "Error"; then
+			attempt=$((attempt + 1))
+			log_warning "Scan failed, retrying in 2s..."
+			sleep 2
+		else
+			echo "Scan complete"
+			break
+		fi
+	done
+
+	if [ -d "$(dirname "$networkscanfile")" ]; then
+		{
+			echo "---Network Scan---"
+			date
+			echo "$scan_output"
+			echo ""
+		} >> "$networkscanfile"
+		log_info "Scan results saved to $networkscanfile"
 	fi
-done
 
-echo "Parsing network scan results..."
-for ssid in "${networks[@]}"
-do
-	if (echo "$scanresults" | egrep "SSID: ${ssid}") >/dev/null 2>&1;
-	then
-		#Valid SSid found, passing to script
-		log_success "Nearby network with saved configs found!"
-		networkssid=$ssid
+	local known_ssids
+	known_ssids=$(get_known_ssids)
+
+	if [ -z "$known_ssids" ]; then
+		log_warning "No saved Wi-Fi networks configured"
+		return 1
+	fi
+
+	while IFS= read -r ssid; do
+		if echo "$scan_output" | grep -q "^${ssid}$"; then
+			log_success "Known network '${ssid}' found nearby!"
+			return 0
+		fi
+	done <<< "$known_ssids"
+
+	log_warning "No known networks found nearby"
+	return 1
+}
+
+function start_hotspot() {
+	echo "Starting Access Point..."
+	if is_hotspot_active; then
+		log_success "AP Mode already active!"
 		return 0
-	else
-		#No Network found, #null issued"
-		networkssid='#null'
 	fi
-done
-}
 
-StartAP() 
-{
-	echo "Starting Access Point (SSID: \"Mudpi\")..."
-	ip link set dev "$interface" down
-	ip addr add $staticip/24 brd + dev "$interface"
-	ip link set dev "$interface" up
-	dhcpcd -k "$interface" >/dev/null 2>&1
-	sleep 2
-	systemctl start hostapd
-	sleep 2
-	systemctl start dnsmasq
-	sudo route add default gw $staticip
-	log_success "Access Point Succsfully Started"
+	nmcli connection up "$hotspot_name" 2>/dev/null || {
+		log_error "Failed to start hotspot"
+		return 1
+	}
+	log_success "Access Point started successfully"
 	echo "ip_address=$(hostname -I)"
 }
 
-StartAPMode() 
-{
-	echo "Checking AP Mode Status..."
-	if systemctl status hostapd | grep "(running)" >/dev/null 2>&1 ;
-	then
-		log_success "AP Mode already Active!"
-	elif { wpa_cli status | grep "$interface"; } >/dev/null 2>&1 ;
-	then
-		log_info "Flushing wifi configs and activating AP Mode"
-		wpa_cli terminate >/dev/null 2>&1
-		sleep 2
-		ip addr flush "$interface"
-		ip link set dev "$interface" down
-		rm -r /var/run/wpa_supplicant >/dev/null 2>&1
-		StartAP
-	else #wifi off, start AP Mode
-		echo "Attempting to start AP Mode..."
-		StartAP
+function stop_hotspot() {
+	echo "Stopping Access Point..."
+	if ! is_hotspot_active; then
+		echo "AP Mode is not active"
+		return 0
 	fi
+
+	nmcli connection down "$hotspot_name" 2>/dev/null || {
+		log_error "Failed to stop hotspot"
+		return 1
+	}
+	log_success "Access Point stopped"
 }
 
-VerifyWifiConnectionSuccess()
-{
-	echo "Verifying Wifi Connected Successfully..."
-	k=0; n=0
-	connected=0
-	maxattempts=3
-	# Loop and attempt a few wifi connection fixes
-	# 1st try ->	releases dhcpcd
-	# 2nd try ->	reconfigures wpa_supplicant
-	# 3rd try ->	restarts dhcpcd service
-	until [ $k -eq 1 ]
-	do
-		sleep 15
-		echo "Checking Wifi connection status..."
-		if (($n >= $maxattempts)); then
-			if wpa_cli -i "$interface" status | grep 'ip_address' >/dev/null 2>&1; then
-				log_success "Network is Successfully Connected"
-				wpa_cli -i "$interface" status | grep 'ip_address'
-			else
-				log_error "Wifi failed (max retries), reverting to AP Mode..."
-				StartAPMode || log_error "Problem starting AP Mode!"
-				# touch "$apfile" || log_warning "Unable to create override file $apfile"
-			fi
-			k=1
-		elif ! wpa_cli -i "$interface" status | grep 'ip_address' >/dev/null 2>&1; then
-			n=$((n + 1))
-			log_warning "Wifi failed to connect. Attempt" $n
-			echo "Reseting $interface..."
-			ip link set dev "$interface" down
-			echo "Flushing old configs $interface..."
-			ip addr flush dev "$interface"
-			ip link set dev "$interface" up
-			if [[ $n -eq 2 ]]; then # attempt a wpa_cli reconfigure on the second failed attempt
-				echo "Reconfiguring $interface..."
-				wpa_cli -i "$interface" reconfigure >/dev/null 2>&1
-				echo "Retrying Wifi connection..."
-				sleep 5
-			elif [[ $n -eq 3 ]]; then # final attempt restart the dhcpcd service
-				echo "Restarting dhcpcd..."
-				systemctl restart dhcpcd >/dev/null 2>&1
-				echo "Retrying Wifi connection..."
-				sleep 2
-			else
-				echo "Retrying Wifi connection..."
-				dhcpcd -n "$interface" >/dev/null 2>&1
-				sleep 2
-			fi
-		else
-			log_success "Network is Successfully Connected"
-			wpa_cli -i "$interface" status | grep 'ip_address'
-			k=1
-			connected=1
+function connect_wifi() {
+	echo "Attempting Wi-Fi connection..."
+	local known_ssids
+	known_ssids=$(get_known_ssids)
+
+	while IFS= read -r ssid; do
+		log_info "Trying to connect to '${ssid}'..."
+		if nmcli connection up "$ssid" ifname "$interface" 2>/dev/null; then
+			log_success "Connected to '${ssid}'"
+			return 0
+		fi
+	done <<< "$known_ssids"
+
+	log_error "Failed to connect to any known network"
+	return 1
+}
+
+function verify_wifi_connection() {
+	local max_attempts=3
+	local attempt=0
+
+	echo "Verifying Wi-Fi connection..."
+	while [ $attempt -lt $max_attempts ]; do
+		sleep 10
+		if is_wifi_connected; then
+			local ip
+			ip=$(hostname -I | awk '{print $1}')
+			log_success "Network connected successfully (IP: ${ip})"
+			return 0
+		fi
+
+		attempt=$((attempt + 1))
+		log_warning "Wi-Fi not connected, attempt ${attempt}/${max_attempts}"
+
+		if [ $attempt -lt $max_attempts ]; then
+			log_info "Restarting NetworkManager and retrying..."
+			systemctl restart NetworkManager 2>/dev/null
+			sleep 5
+			connect_wifi 2>/dev/null
 		fi
 	done
+
+	log_error "Wi-Fi connection failed after ${max_attempts} attempts"
+	return 1
 }
 
-
-## MAIN
+## Main
 ############################################################
 if [[ -f "$apfile" ]]; then
-	log_info "Detected AP Mode Override File $apfile"
-	StartAPMode || log_error "Problem starting AP Mode!"
-	rm "$apfile"
-elif [ "$ssids" != "" ]; then
-	log_info "Configurations detected in $wpaConfig"
-	echo "Networks parsed from config: ${ssids[@]}"
-	ScanNearbyNetworks
-	if [ "$networkssid" != "#null" ]; 
-	then
-		echo "Checking AP Mode status before connecting Wifi..."
-		if systemctl status hostapd | grep "(running)" >/dev/null 2>&1
-		then #AP running and configured network in range
-			log_info "AP Mode active while configured network nearby..."
-			echo "Shutting Down Access Point..."
-			ip link set dev "$interface" down
-			systemctl stop hostapd
-			systemctl stop dnsmasq
-			ip addr flush dev "$interface"
-			ip link set dev "$interface" up
-			dhcpcd  -n "$interface" >/dev/null 2>&1
-			echo -e "Access Point Stopped Successfully"
-			log_warning "AP Mode stopped for Wifi"
-			echo "Attempting Wifi connection..."
-			wpa_supplicant -B -i "$interface" -c $wpaConfig >/dev/null 2>&1
-			# dhcpcd -n "$interface" >/dev/null 2>&1
-			VerifyWifiConnectionSuccess
-		elif { wpa_cli -i "$interface" status | grep 'ip_address'; } >/dev/null 2>&1
-		then #Already connected
-			echo "Verified AP Mode is Disabled"
-			log_success "Wifi connection already established!"
-		else #networks found and no hotspot running
-			echo "Verified AP Mode is Disabled"
-			echo "Attempting Wifi connection..."
-			wpa_supplicant -B -i "$interface" -c $wpaConfig >/dev/null 2>&1
-			# dhcpcd -n "$interface" >/dev/null 2>&1
-			VerifyWifiConnectionSuccess
+	log_info "Detected AP Mode override file: $apfile"
+	start_hotspot || log_error "Problem starting AP Mode!"
+	rm -f "$apfile"
+elif is_wifi_connected && ! is_hotspot_active; then
+	log_success "Wi-Fi is already connected"
+elif is_hotspot_active; then
+	log_info "AP Mode is active, checking for known networks..."
+	if scan_nearby_networks; then
+		log_info "Known network found, switching from AP to Wi-Fi..."
+		stop_hotspot
+		sleep 2
+		if ! connect_wifi; then
+			log_warning "Wi-Fi connection failed, restarting AP Mode"
+			start_hotspot
+		else
+			verify_wifi_connection || {
+				log_warning "Wi-Fi verification failed, reverting to AP Mode"
+				start_hotspot
+			}
 		fi
-	else #no configured networks found in range
-		log_warning "No Configured Network Found Nearby"
-		StartAPMode || log_error "Problem starting AP Mode!"
+	else
+		log_info "No known networks nearby, keeping AP Mode active"
 	fi
-else # no networks configured in wpa_supplicant
-	log_info "No saved networks detected in $wpaConfig"
-	StartAPMode || log_error "Problem starting AP Mode!"
+else
+	log_info "No active connection, scanning for networks..."
+	if scan_nearby_networks; then
+		if connect_wifi; then
+			verify_wifi_connection || {
+				log_warning "Wi-Fi verification failed, falling back to AP Mode"
+				start_hotspot
+			}
+		else
+			log_warning "Could not connect to any known network, starting AP Mode"
+			start_hotspot
+		fi
+	else
+		log_info "No known networks found, starting AP Mode"
+		start_hotspot
+	fi
 fi
 
-#echo "process is complete, removing lockfile"
 echo "-----------------------------"
-rm $lockfile
 exit 0
-##################################################################

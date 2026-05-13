@@ -1,13 +1,24 @@
-adaptor='wlan0'
+#!/bin/bash
+#
+# Stop the MudPi Wi-Fi hotspot (Access Point)
+# Uses NetworkManager (nmcli) on Raspberry Pi OS Bookworm+
+#
 
-if [ "$1" != "" ]; then
-    adaptor=$1
+connection_name="mudpi-hotspot"
+
+echo "Shutting down Access Point..."
+
+if ! command -v nmcli &>/dev/null; then
+	echo "Error: nmcli not found. NetworkManager is required."
+	exit 1
 fi
-echo "Shutting Down Access Point..."
-ip link set dev "$adaptor" down
-systemctl stop hostapd
-systemctl stop dnsmasq
-ip addr flush dev "$adaptor"
-ip link set dev "$adaptor" up
-dhcpcd  -n "$adaptor" >/dev/null 2>&1
-echo "Access Point Stopped Succsfully"
+
+if nmcli -t -f NAME connection show --active | grep -q "^${connection_name}$"; then
+	nmcli connection down "$connection_name" || {
+		echo "Error: Failed to stop hotspot"
+		exit 1
+	}
+	echo "Access Point stopped successfully"
+else
+	echo "Access Point is not currently active"
+fi
