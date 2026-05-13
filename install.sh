@@ -33,6 +33,7 @@ nginx_option=0
 assistant_option=0
 ui_option=0
 ap_mode_option=0
+zigbee2mqtt_option=0
 
 usage=$(cat << 'EOF'
 Usage: install.sh [OPTION]\n
@@ -329,6 +330,93 @@ function askAPModeInstall() {
 	else
 		ap_mode_option=1
 	fi
+}
+
+function askZigbee2MQTTInstall() {
+	echo "Zigbee2MQTT bridges Zigbee devices to MQTT (requires a Zigbee USB adapter)"
+	echo -n "Install Zigbee2MQTT? [y/N]: "
+	if [ "$force_yes" == 0 ]; then
+		read answer < /dev/tty
+		if [ "$answer" != "${answer#[Yy]}" ]; then
+			zigbee2mqtt_option=1
+		else
+			echo -e
+		fi
+	else
+		zigbee2mqtt_option=1
+	fi
+}
+
+function installZigbee2MQTT() {
+	log_info "Installing Zigbee2MQTT"
+
+	if command -v node &>/dev/null; then
+		local node_major
+		node_major=$(node --version | sed 's/v\([0-9]*\).*/\1/')
+		if [ "$node_major" -ge 20 ]; then
+			log_info "Node.js $(node --version) already installed"
+		else
+			log_warning "Node.js $(node --version) is too old, installing LTS..."
+			sudo curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+			sudo apt-get install $apt_option nodejs || log_error "Unable to install Node.js"
+		fi
+	else
+		log_info "Installing Node.js LTS..."
+		sudo curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+		sudo apt-get install $apt_option nodejs || log_error "Unable to install Node.js"
+	fi
+
+	sudo apt-get install $apt_option make g++ gcc libsystemd-dev || log_error "Unable to install Zigbee2MQTT build dependencies"
+
+	sudo corepack enable || log_warning "corepack enable failed, pnpm may need manual install"
+
+	log_info "Node.js $(node --version) ready"
+
+	local z2m_dir="/opt/zigbee2mqtt"
+
+	if [ -d "$z2m_dir" ]; then
+		log_warning "Existing Zigbee2MQTT installation found at ${z2m_dir}"
+		echo -n "Back up and reinstall? [Y/n]: "
+		if [ "$force_yes" == 0 ]; then
+			read answer < /dev/tty
+			if [ "$answer" != "${answer#[Nn]}" ]; then
+				log_info "Keeping existing Zigbee2MQTT installation"
+				return 0
+			fi
+		fi
+		sudo systemctl stop zigbee2mqtt 2>/dev/null || true
+		sudo mv "$z2m_dir" "${z2m_dir}.$(date +%F_%H%M%S)"
+	fi
+
+	sudo mkdir -p "$z2m_dir"
+	sudo chown -R "${mudpi_user}:" "$z2m_dir"
+
+	log_info "Cloning Zigbee2MQTT repository..."
+	sudo -u "$mudpi_user" git clone --depth 1 https://github.com/Koenkk/zigbee2mqtt.git "$z2m_dir" || log_error "Unable to clone Zigbee2MQTT"
+
+	log_info "Installing Zigbee2MQTT dependencies (this may take a few minutes)..."
+	cd "$z2m_dir"
+	sudo -u "$mudpi_user" pnpm install --frozen-lockfile || log_error "Unable to install Zigbee2MQTT dependencies"
+	cd - > /dev/null
+
+	log_info "Installing Zigbee2MQTT systemd service"
+	sudo cp "$mudpi_dir/installer/configs/zigbee2mqtt.service" /etc/systemd/system/zigbee2mqtt.service || log_error "Unable to install Zigbee2MQTT service file"
+	sudo sed -i "s/User=mudpi/User=${mudpi_user}/g" /etc/systemd/system/zigbee2mqtt.service
+	sudo systemctl daemon-reload
+	sudo systemctl enable zigbee2mqtt
+
+	log_info "Zigbee2MQTT installed successfully!"
+	echo ""
+	echo "  Zigbee2MQTT is installed but NOT started yet."
+	echo "  Plug in your Zigbee adapter, then start with:"
+	echo "    sudo systemctl start zigbee2mqtt"
+	echo ""
+	echo "  On first start, open the onboarding UI at:"
+	echo "    http://${ip}:8080"
+	echo ""
+	echo "  Logs: sudo journalctl -u zigbee2mqtt -f"
+	echo "  Update: cd /opt/zigbee2mqtt && ./update.sh"
+	echo ""
 }
 
 function installAPMode() {
@@ -693,6 +781,7 @@ function installMudpi() {
 	askUIInstall
 	askAssistantInstall
 	askAPModeInstall
+	askZigbee2MQTTInstall
 	setupUser
 	EnableSSH
 	installDependencies
@@ -711,6 +800,9 @@ function installMudpi() {
 	fi
 	if [ "$ap_mode_option" == 1 ]; then
 		installAPMode
+	fi
+	if [ "$zigbee2mqtt_option" == 1 ]; then
+		installZigbee2MQTT
 	fi
 	installDefaultConfigs
 	updateSudoersFile

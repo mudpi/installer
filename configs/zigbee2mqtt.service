@@ -1,0 +1,18 @@
+[Unit]
+Description=Zigbee2MQTT
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Environment=NODE_ENV=production
+Type=exec
+ExecStart=/usr/bin/node index.js
+WorkingDirectory=/opt/zigbee2mqtt
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+RestartSec=10s
+User=mudpi
+
+[Install]
+WantedBy=multi-user.target

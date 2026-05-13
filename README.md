@@ -53,6 +53,7 @@ The installer sets up the following components:
 * **Mosquitto** MQTT broker for messaging
 * **Supervisor** to manage the MudPi background process
 * **GPIO libraries** (`rpi-lgpio`, `gpiozero`) for hardware interaction
+* **[Zigbee2MQTT](https://www.zigbee2mqtt.io)** for bridging Zigbee devices to MQTT (optional, requires a Zigbee USB adapter)
 
 ### Note
 MudPi Installer assumes most of the setup, so it is ideal to run on a fresh Raspberry Pi OS install or a Pi that is not already heavily configured for other purposes. The installer does its best to preserve existing configs and only alter the settings needed to operate. You may still encounter conflicts if you install MudPi on a device already running a web server or dedicated to another project.
@@ -110,6 +111,19 @@ On boot, the Auto AP Mode script waits 2 minutes before its first check. If Wi-F
 
 #### Do I need Assistant installed?
 If you are using this installer and already have a Wi-Fi connection established, then probably not. It is mainly useful for headless first-time setup and building multiple units at scale.
+
+#### Zigbee2MQTT?
+If you selected the Zigbee2MQTT option during installation, it is installed at `/opt/zigbee2mqtt` and runs as a systemd service. A Zigbee USB adapter (e.g. SONOFF Zigbee 3.0 Dongle, Electrolama zzh!) is required. The service is enabled but not started automatically — plug in your adapter first, then:
+```bash
+sudo systemctl start zigbee2mqtt
+```
+On first start, open `http://<your-pi-ip>:8080` to complete onboarding and configure your adapter. Useful commands:
+```bash
+sudo systemctl status zigbee2mqtt    # Check status
+sudo journalctl -u zigbee2mqtt -f    # View logs
+cd /opt/zigbee2mqtt && ./update.sh   # Update to latest version
+```
+For supported adapters and devices, see the [Zigbee2MQTT documentation](https://www.zigbee2mqtt.io/guide/getting-started/).
 
 #### Raspberry Pi 5 compatibility?
 Yes. The installer uses `rpi-lgpio` and `gpiozero` for GPIO access, which are compatible with the Pi 5's RP1 chip. The older `RPi.GPIO` library is not used.
